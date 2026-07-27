@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>BITÁCORA DE SEGUIMIENTO ETAPA PRODUCTIVA - GFPI-F-147</title>
+
+    <!-- Custom fonts for this template-->
+    <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link
+        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+        rel="stylesheet">
+
+    <!-- Custom styles for this template-->
+    <link href="css/sb-admin-2.min.css" rel="stylesheet">
+
+    <style>
+        .bitacora-required::after {
+            content: " *";
+            color: #e74a3b;
+        }
+        .actividad-row td {
+            vertical-align: top;
+        }
+        @media print {
+            .sidebar, .topbar, footer, .no-print { display: none !important; }
+            #content-wrapper { margin: 0 !important; }
+        }
+    </style>
+
+</head>
+
+<body id="page-top">
+
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+
+        <!-- Sidebar -->
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+                <div class="sidebar-brand-icon rotate-n-15">
+                    <i class="fas fa-laugh-wink"></i>
+                </div>
+                <div class="sidebar-brand-text mx-3">FORMULARIO BITACORA</div>
+            </a>
+
+            <hr class="sidebar-divider my-0">
+
+            <li class="nav-item">
+                <a class="nav-link" href="index.html">
+                    <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <span>INICIO</span></a>
+            </li>
+
+            <hr class="sidebar-divider">
+
+            <li class="nav-item active">
+                <a class="nav-link" href="buttons.html">
+                    <i class="fas fa-fw fa-book"></i>
+                    <span>Bitacora</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-target="#collapseUtilities"
+                    aria-expanded="true" aria-controls="collapseUtilities">
+                    <i class="fas fa-fw fa-wrench"></i>
+                    <span>Vista Previa</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider">
+
+            <li class="nav-item">
+                <a class="nav-link" href="charts.html">
+                    <i class="fas fa-fw fa-chart-area"></i>
+                    <span>Charts</span></a>
+            </li>
+
+            <hr class="sidebar-divider d-none d-md-block">
+
+            <div class="text-center d-none d-md-inline">
+                <button class="rounded-circle border-0" id="sidebarToggle"></button>
+            </div>
+
+        </ul>
+        <!-- End of Sidebar -->
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+
+            <div id="content">
+
+                <!-- Topbar -->
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow no-print">
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                        <i class="fa fa-bars"></i>
+                    </button>
+                    <ul class="navbar-nav ml-auto">
+                    </ul>
+                </nav>
+                <!-- End of Topbar -->
+
+                <!-- Begin Page Content -->
+                <div class="container-fluid">
+
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">Formato Bitácora de Seguimiento Etapa Productiva</h1>
+                        <span class="text-muted small">Código: GFPI-F-147 &nbsp;|&nbsp; Versión: 05</span>
+                    </div>
+
+                    <form id="formBitacora" novalidate>
+
+                        <!-- Encabezado -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Encabezado</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="form-group col-md-4">
+                                        <label class="bitacora-required">Bitácora N°</label>
+                                        <input type="number" min="1" class="form-control" name="bitacora_numero" required>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label class="bitacora-required">Período a reportar - Desde</label>
+                                        <input type="date" class="form-control" name="periodo_desde" required>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label class="bitacora-required">Período a reportar - Hasta</label>
+                                        <input type="date" class="form-control" name="periodo_hasta" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Datos del aprendiz -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Datos del aprendiz</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="form-group col-md-6">
+                                        <label class="bitacora-required">Nombre completo del aprendiz</label>
+                                        <input type="text" class="form-control" name="aprendiz_nombre" required>
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label class="bitacora-required">Tipo de documento</label>
+                                        <select class="form-control" name="aprendiz_tipo_doc" required>
+                                            <option value="">Seleccione...</option>
+                                            <option value="CC">Cédula de ciudadanía</option>
+                                            <option value="TI">Tarjeta de identidad</option>
+                                            <option value="CE">Cédula de extranjería</option>
+                                            <option value="PA">Pasaporte</option>
+                                            <option value="PPT">Permiso por Protección Temporal</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label class="bitacora-required">Número de identificación</label>
+                                        <input type="text" class="form-control" name="aprendiz_num_doc" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-md-4">
+                                        <label class="bitacora-required">Contacto telefónico</label>
+                                        <input type="tel" class="form-control" name="aprendiz_telefono" required>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label class="bitacora-required">Correo electrónico institucional</label>
+                                        <input type="email" class="form-control" name="aprendiz_correo_institucional" required>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label class="bitacora-required">Correo electrónico personal</label>
+                                        <input type="email" class="form-control" name="aprendiz_correo_personal" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-md-12">
+                                        <label class="bitacora-required">Dirección de residencia</label>
+                                        <input type="text" class="form-control" name="aprendiz_direccion" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-md-4">
+                                        <label class="bitacora-required">Número de grupo (ficha)</label>
+                                        <input type="text" class="form-control" name="aprendiz_ficha" required>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label class="bitacora-required">Modalidad de formación</label>
+                                        <select class="form-control" name="aprendiz_modalidad_formacion" required>
+                                            <option value="">Seleccione...</option>
+                                            <option value="Presencial">Presencial</option>
+                                            <option value="Virtual">Virtual</option>
+                                            <option value="A distancia">A distancia</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label class="bitacora-required">Programa de formación</label>
+                                        <input type="text" class="form-control" name="aprendiz_programa" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-md-4">
+                                        <label class="bitacora-required">Modalidad de ejecución de la etapa productiva</label>
+                                        <select class="form-control" name="modalidad_ejecucion" required>
+                                            <option value="">Seleccione...</option>
+                                            <option value="Presencial">Presencial</option>
+                                            <option value="Virtual">Virtual</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label class="bitacora-required">¿Realiza la etapa productiva en el exterior?</label>
+                                        <select class="form-control" name="etapa_exterior" required>
+                                            <option value="">Seleccione...</option>
+                                            <option value="Si">Sí</option>
+                                            <option value="No">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label>País donde realiza la etapa productiva</label>
+                                        <input type="text" class="form-control" name="etapa_pais">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Datos del ente co-formador -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Datos del ente co-formador</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="form-group col-md-6">
+                                        <label class="bitacora-required">Nombre de la entidad, empresa u organización</label>
+                                        <input type="text" class="form-control" name="empresa_nombre" required>
+                                    </div>
+                                    <div class="form-group col-md-2">
+                                        <label class="bitacora-required">NIT</label>
+                                        <input type="text" class="form-control" name="empresa_nit" required>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label class="bitacora-required">Dirección de la entidad</label>
+                                        <input type="text" class="form-control" name="empresa_direccion" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Datos de la persona encargada (co-formador) -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Datos de la persona encargada del proceso formativo en la entidad co-formadora</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="form-group col-md-4">
+                                        <label class="bitacora-required">Nombre completo (Jefe inmediato/Supervisor)</label>
+                                        <input type="text" class="form-control" name="coformador_nombre" required>
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label class="bitacora-required">Cargo</label>
+                                        <input type="text" class="form-control" name="coformador_cargo" required>
+                                    </div>
+                                    <div class="form-group col-md-2">
+                                        <label class="bitacora-required">Contacto telefónico</label>
+                                        <input type="tel" class="form-control" name="coformador_telefono" required>
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label class="bitacora-required">Correo electrónico</label>
+                                        <input type="email" class="form-control" name="coformador_correo" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Datos del instructor de seguimiento -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Datos del instructor de seguimiento</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="form-group col-md-6">
+                                        <label class="bitacora-required">Nombre completo del instructor de seguimiento</label>
+                                        <input type="text" class="form-control" name="instructor_nombre" required>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label class="bitacora-required">Correo electrónico del instructor de seguimiento</label>
+                                        <input type="email" class="form-control" name="instructor_correo" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alternativa de etapa productiva -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Alternativa de etapa productiva</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small">Seleccione la alternativa que está realizando.</p>
+                                <div class="form-row">
+                                    <div class="col-md-4 form-check">
+                                        <input class="form-check-input" type="radio" name="alternativa" id="altContrato" value="Contrato de aprendizaje" required>
+                                        <label class="form-check-label" for="altContrato">Contrato de aprendizaje</label>
+                                    </div>
+                                    <div class="col-md-4 form-check">
+                                        <input class="form-check-input" type="radio" name="alternativa" id="altMonitoria" value="Monitoria">
+                                        <label class="form-check-label" for="altMonitoria">Monitoria</label>
+                                    </div>
+                                    <div class="col-md-4 form-check">
+                                        <input class="form-check-input" type="radio" name="alternativa" id="altProyecto" value="Proyecto productivo">
+                                        <label class="form-check-label" for="altProyecto">Proyecto productivo</label>
+                                    </div>
+                                    <div class="col-md-4 form-check">
+                                        <input class="form-check-input" type="radio" name="alternativa" id="altVinculo" value="Contrato de vínculo formativo">
+                                        <label class="form-check-label" for="altVinculo">Contrato de vínculo formativo</label>
+                                    </div>
+                                    <div class="col-md-4 form-check">
+                                        <input class="form-check-input" type="radio" name="alternativa" id="altLaboral" value="Vínculo laboral">
+                                        <label class="form-check-label" for="altLaboral">Vínculo laboral</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Descripción de actividades realizadas -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 font-weight-bold text-primary">Descripción de las actividades realizadas</h6>
+                                <button type="button" class="btn btn-sm btn-success no-print" id="btnAddActividad">
+                                    <i class="fas fa-plus"></i> Agregar fila
+                                </button>
+                            </div>
+                            <div class="card-body table-responsive">
+                                <table class="table table-bordered" id="tablaActividades">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th style="min-width:220px">Descripción de la actividad</th>
+                                            <th style="min-width:200px">Competencias del programa aplicadas</th>
+                                            <th style="min-width:140px">Fecha de inicio</th>
+                                            <th style="min-width:140px">Fecha de fin</th>
+                                            <th style="min-width:200px">Evidencia de cumplimiento</th>
+                                            <th style="min-width:200px">Observaciones / inasistencias / dificultades</th>
+                                            <th class="no-print"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="actividad-row">
+                                            <td><textarea class="form-control" name="actividad_descripcion[]" rows="2"></textarea></td>
+                                            <td><textarea class="form-control" name="actividad_competencias[]" rows="2"></textarea></td>
+                                            <td><input type="date" class="form-control" name="actividad_fecha_inicio[]"></td>
+                                            <td><input type="date" class="form-control" name="actividad_fecha_fin[]"></td>
+                                            <td><textarea class="form-control" name="actividad_evidencia[]" rows="2"></textarea></td>
+                                            <td><textarea class="form-control" name="actividad_observaciones[]" rows="2"></textarea></td>
+                                            <td class="no-print text-center align-middle">
+                                                <button type="button" class="btn btn-sm btn-danger btnRemoveActividad"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Afiliación ARL -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Información afiliación a la ARL</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="form-group col-md-3">
+                                        <label class="bitacora-required">¿El aprendiz se encuentra afiliado a la ARL?</label>
+                                        <select class="form-control" name="arl_afiliado" required>
+                                            <option value="">Seleccione...</option>
+                                            <option value="Si">Sí</option>
+                                            <option value="No">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label class="bitacora-required">Nivel de riesgo actual (1 al 5)</label>
+                                        <select class="form-control" name="arl_nivel_riesgo" required>
+                                            <option value="">Seleccione...</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label class="bitacora-required">¿El nivel de riesgo corresponde a las actividades?</label>
+                                        <select class="form-control" name="arl_nivel_corresponde" required>
+                                            <option value="">Seleccione...</option>
+                                            <option value="Si">Sí</option>
+                                            <option value="No">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label class="bitacora-required">¿Cuenta con los EPP requeridos?</label>
+                                        <select class="form-control" name="arl_epp" required>
+                                            <option value="">Seleccione...</option>
+                                            <option value="Si">Sí</option>
+                                            <option value="No">No</option>
+                                            <option value="NA">N/A</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Firmas -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Firmas y entrega</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="form-group col-md-6">
+                                        <label>Firma del aprendiz</label>
+                                        <input type="text" class="form-control" name="firma_aprendiz" placeholder="Nombre / referencia de firma">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label class="bitacora-required">Fecha entrega bitácora</label>
+                                        <input type="date" class="form-control" name="fecha_entrega" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-md-6">
+                                        <label>Firma del instructor de seguimiento</label>
+                                        <input type="text" class="form-control" name="firma_instructor" placeholder="Nombre / referencia de firma">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label>Firma del ente co-formador</label>
+                                        <input type="text" class="form-control" name="firma_coformador" placeholder="Nombre / referencia de firma">
+                                    </div>
+                                </div>
+                                <p class="text-muted small mb-0">
+                                    Nota: con el diligenciamiento de este formato se autoriza al SENA la recolección y tratamiento de datos personales,
+                                    conforme a la política de datos personales de la entidad GOR-POL-006.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Acciones -->
+                        <div class="card shadow mb-4 no-print">
+                            <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
+                                <div>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar bitácora</button>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdownDescargar"
+                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-download"></i> Descargar formato
+                                    </button>
+                                    <div class="dropdown-menu" aria-labelledby="dropdownDescargar">
+                                        <a class="dropdown-item" href="#" id="btnDescargarWord"><i class="fas fa-file-word mr-2"></i>Word (.docx)</a>
+                                        <a class="dropdown-item" href="#" id="btnDescargarPDF"><i class="fas fa-file-pdf mr-2"></i>PDF</a>
+                                        <a class="dropdown-item" href="#" id="btnDescargarExcel"><i class="fas fa-file-excel mr-2"></i>Excel (.xlsx)</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </form>
+
+                </div>
+                <!-- /.container-fluid -->
+
+            </div>
+            <!-- End of Main Content -->
+
+            <footer class="sticky-footer bg-white no-print">
+                <div class="container my-auto">
+                    <div class="copyright text-center my-auto">
+                        <span>Copyright &copy; Your Website 2021</span>
+                    </div>
+                </div>
+            </footer>
+
+        </div>
+        <!-- End of Content Wrapper -->
+
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <a class="scroll-to-top rounded no-print" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="js/sb-admin-2.min.js"></script>
+
+    <script>
+        // Agregar / quitar filas en la tabla de actividades
+        document.getElementById('btnAddActividad').addEventListener('click', function () {
+            var tbody = document.querySelector('#tablaActividades tbody');
+            var newRow = tbody.querySelector('.actividad-row').cloneNode(true);
+            newRow.querySelectorAll('input, textarea').forEach(function (el) { el.value = ''; });
+            tbody.appendChild(newRow);
+        });
+
+        document.querySelector('#tablaActividades tbody').addEventListener('click', function (e) {
+            var btn = e.target.closest('.btnRemoveActividad');
+            if (!btn) return;
+            var rows = document.querySelectorAll('#tablaActividades tbody tr');
+            if (rows.length > 1) {
+                btn.closest('tr').remove();
+            }
+        });
+
+        // TODO: conectar la generación real de Word/PDF/Excel con los datos del formulario.
+        // Por ahora estos botones son marcadores de posición para la siguiente fase del proyecto.
+        function recolectarDatosFormulario() {
+            var form = document.getElementById('formBitacora');
+            return new FormData(form);
+        }
+
+        document.getElementById('btnDescargarWord').addEventListener('click', function (e) {
+            e.preventDefault();
+            alert('Descarga en Word: pendiente de implementar en la siguiente fase.');
+        });
+        document.getElementById('btnDescargarPDF').addEventListener('click', function (e) {
+            e.preventDefault();
+            alert('Descarga en PDF: pendiente de implementar en la siguiente fase.');
+        });
+        document.getElementById('btnDescargarExcel').addEventListener('click', function (e) {
+            e.preventDefault();
+            alert('Descarga en Excel: pendiente de implementar en la siguiente fase.');
+        });
+
+        document.getElementById('formBitacora').addEventListener('submit', function (e) {
+            e.preventDefault();
+            alert('Bitácora guardada localmente (pendiente de conectar a backend/almacenamiento).');
+        });
+    </script>
+
+</body>
+
+</html>
