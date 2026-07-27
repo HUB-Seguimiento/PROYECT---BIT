@@ -118,6 +118,8 @@
 
                     <form id="formBitacora" novalidate>
 
+                        <div id="erroresValidacion" class="alert alert-danger d-none" role="alert"></div>
+
                         <!-- Encabezado -->
                         <div class="card shadow mb-4">
                             <div class="card-header py-3">
@@ -126,16 +128,40 @@
                             <div class="card-body">
                                 <div class="row">
                                     <div class="form-group col-md-4">
+                                        <label class="bitacora-required">Fecha de inicio de la etapa productiva</label>
+                                        <input type="date" class="form-control" id="fechaInicioEtapa" name="fecha_inicio_etapa" required>
+                                        <small class="form-text text-muted">Se ingresa una sola vez; a partir de aquí se calculan las 12 bitácoras (15 días c/u, total 6 meses).</small>
+                                    </div>
+                                    <div class="form-group col-md-2">
                                         <label class="bitacora-required">Bitácora N°</label>
-                                        <input type="number" min="1" class="form-control" name="bitacora_numero" required>
+                                        <select class="form-control" id="bitacoraNumero" name="bitacora_numero" required>
+                                            <option value="">Seleccione...</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                            <option value="6">6</option>
+                                            <option value="7">7</option>
+                                            <option value="8">8</option>
+                                            <option value="9">9</option>
+                                            <option value="10">10</option>
+                                            <option value="11">11</option>
+                                            <option value="12">12</option>
+                                        </select>
                                     </div>
-                                    <div class="form-group col-md-4">
+                                    <div class="form-group col-md-3">
                                         <label class="bitacora-required">Período a reportar - Desde</label>
-                                        <input type="date" class="form-control" name="periodo_desde" required>
+                                        <input type="date" class="form-control" name="periodo_desde" id="periodoDesde" readonly required>
                                     </div>
-                                    <div class="form-group col-md-4">
+                                    <div class="form-group col-md-3">
                                         <label class="bitacora-required">Período a reportar - Hasta</label>
-                                        <input type="date" class="form-control" name="periodo_hasta" required>
+                                        <input type="date" class="form-control" name="periodo_hasta" id="periodoHasta" readonly required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <small class="text-muted" id="resumenEtapa"></small>
                                     </div>
                                 </div>
                             </div>
@@ -308,26 +334,30 @@
                             </div>
                             <div class="card-body">
                                 <p class="text-muted small">Seleccione la alternativa que está realizando.</p>
-                                <div class="form-row">
-                                    <div class="col-md-4 form-check">
-                                        <input class="form-check-input" type="radio" name="alternativa" id="altContrato" value="Contrato de aprendizaje" required>
-                                        <label class="form-check-label" for="altContrato">Contrato de aprendizaje</label>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="custom-control custom-radio mb-3">
+                                            <input class="custom-control-input" type="radio" name="alternativa" id="altContrato" value="Contrato de aprendizaje" required>
+                                            <label class="custom-control-label" for="altContrato">Contrato de aprendizaje</label>
+                                        </div>
+                                        <div class="custom-control custom-radio mb-3">
+                                            <input class="custom-control-input" type="radio" name="alternativa" id="altVinculo" value="Contrato de vínculo formativo">
+                                            <label class="custom-control-label" for="altVinculo">Contrato de vínculo formativo</label>
+                                        </div>
+                                        <div class="custom-control custom-radio mb-3">
+                                            <input class="custom-control-input" type="radio" name="alternativa" id="altLaboral" value="Vínculo laboral">
+                                            <label class="custom-control-label" for="altLaboral">Vínculo laboral</label>
+                                        </div>
                                     </div>
-                                    <div class="col-md-4 form-check">
-                                        <input class="form-check-input" type="radio" name="alternativa" id="altMonitoria" value="Monitoria">
-                                        <label class="form-check-label" for="altMonitoria">Monitoria</label>
-                                    </div>
-                                    <div class="col-md-4 form-check">
-                                        <input class="form-check-input" type="radio" name="alternativa" id="altProyecto" value="Proyecto productivo">
-                                        <label class="form-check-label" for="altProyecto">Proyecto productivo</label>
-                                    </div>
-                                    <div class="col-md-4 form-check">
-                                        <input class="form-check-input" type="radio" name="alternativa" id="altVinculo" value="Contrato de vínculo formativo">
-                                        <label class="form-check-label" for="altVinculo">Contrato de vínculo formativo</label>
-                                    </div>
-                                    <div class="col-md-4 form-check">
-                                        <input class="form-check-input" type="radio" name="alternativa" id="altLaboral" value="Vínculo laboral">
-                                        <label class="form-check-label" for="altLaboral">Vínculo laboral</label>
+                                    <div class="col-md-6">
+                                        <div class="custom-control custom-radio mb-3">
+                                            <input class="custom-control-input" type="radio" name="alternativa" id="altMonitoria" value="Monitoria">
+                                            <label class="custom-control-label" for="altMonitoria">Monitoria</label>
+                                        </div>
+                                        <div class="custom-control custom-radio mb-3">
+                                            <input class="custom-control-input" type="radio" name="alternativa" id="altProyecto" value="Proyecto productivo">
+                                            <label class="custom-control-label" for="altProyecto">Proyecto productivo</label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -342,25 +372,52 @@
                                 </button>
                             </div>
                             <div class="card-body table-responsive">
+                                <p class="text-muted small">
+                                    Mínimo 3 actividades, cada una con descripción y competencias diferentes entre sí. Estas mismas actividades se repiten
+                                    en las 12 bitácoras; las fechas de cada actividad deben quedar dentro del período de la bitácora correspondiente.
+                                    Las columnas con <span class="text-danger">*</span> son obligatorias; "Observaciones" es opcional.
+                                </p>
                                 <table class="table table-bordered" id="tablaActividades">
                                     <thead class="thead-light">
                                         <tr>
-                                            <th style="min-width:220px">Descripción de la actividad</th>
-                                            <th style="min-width:200px">Competencias del programa aplicadas</th>
-                                            <th style="min-width:140px">Fecha de inicio</th>
-                                            <th style="min-width:140px">Fecha de fin</th>
-                                            <th style="min-width:200px">Evidencia de cumplimiento</th>
+                                            <th style="min-width:220px">Descripción de la actividad <span class="text-danger">*</span></th>
+                                            <th style="min-width:200px">Competencias del programa aplicadas <span class="text-danger">*</span></th>
+                                            <th style="min-width:140px">Fecha de inicio <span class="text-danger">*</span></th>
+                                            <th style="min-width:140px">Fecha de fin <span class="text-danger">*</span></th>
+                                            <th style="min-width:200px">Evidencia de cumplimiento <span class="text-danger">*</span></th>
                                             <th style="min-width:200px">Observaciones / inasistencias / dificultades</th>
                                             <th class="no-print"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr class="actividad-row">
-                                            <td><textarea class="form-control" name="actividad_descripcion[]" rows="2"></textarea></td>
-                                            <td><textarea class="form-control" name="actividad_competencias[]" rows="2"></textarea></td>
-                                            <td><input type="date" class="form-control" name="actividad_fecha_inicio[]"></td>
-                                            <td><input type="date" class="form-control" name="actividad_fecha_fin[]"></td>
-                                            <td><textarea class="form-control" name="actividad_evidencia[]" rows="2"></textarea></td>
+                                            <td><textarea class="form-control" name="actividad_descripcion[]" rows="2" required></textarea></td>
+                                            <td><textarea class="form-control" name="actividad_competencias[]" rows="2" required></textarea></td>
+                                            <td><input type="date" class="form-control" name="actividad_fecha_inicio[]" required></td>
+                                            <td><input type="date" class="form-control" name="actividad_fecha_fin[]" required></td>
+                                            <td><textarea class="form-control" name="actividad_evidencia[]" rows="2" required></textarea></td>
+                                            <td><textarea class="form-control" name="actividad_observaciones[]" rows="2"></textarea></td>
+                                            <td class="no-print text-center align-middle">
+                                                <button type="button" class="btn btn-sm btn-danger btnRemoveActividad"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                        <tr class="actividad-row">
+                                            <td><textarea class="form-control" name="actividad_descripcion[]" rows="2" required></textarea></td>
+                                            <td><textarea class="form-control" name="actividad_competencias[]" rows="2" required></textarea></td>
+                                            <td><input type="date" class="form-control" name="actividad_fecha_inicio[]" required></td>
+                                            <td><input type="date" class="form-control" name="actividad_fecha_fin[]" required></td>
+                                            <td><textarea class="form-control" name="actividad_evidencia[]" rows="2" required></textarea></td>
+                                            <td><textarea class="form-control" name="actividad_observaciones[]" rows="2"></textarea></td>
+                                            <td class="no-print text-center align-middle">
+                                                <button type="button" class="btn btn-sm btn-danger btnRemoveActividad"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                        <tr class="actividad-row">
+                                            <td><textarea class="form-control" name="actividad_descripcion[]" rows="2" required></textarea></td>
+                                            <td><textarea class="form-control" name="actividad_competencias[]" rows="2" required></textarea></td>
+                                            <td><input type="date" class="form-control" name="actividad_fecha_inicio[]" required></td>
+                                            <td><input type="date" class="form-control" name="actividad_fecha_fin[]" required></td>
+                                            <td><textarea class="form-control" name="actividad_evidencia[]" rows="2" required></textarea></td>
                                             <td><textarea class="form-control" name="actividad_observaciones[]" rows="2"></textarea></td>
                                             <td class="no-print text-center align-middle">
                                                 <button type="button" class="btn btn-sm btn-danger btnRemoveActividad"><i class="fas fa-trash"></i></button>
@@ -426,8 +483,17 @@
                             <div class="card-body">
                                 <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label>Firma del aprendiz</label>
-                                        <input type="text" class="form-control" name="firma_aprendiz" placeholder="Nombre / referencia de firma">
+                                        <label class="bitacora-required">Firma del aprendiz (imagen)</label>
+                                        <div class="custom-file">
+                                            <input type="file" class="custom-file-input firma-input" id="firmaAprendizInput" name="firma_aprendiz" accept="image/*" required>
+                                            <label class="custom-file-label" for="firmaAprendizInput">Seleccionar imagen...</label>
+                                        </div>
+                                        <div class="firma-preview-wrapper mt-2" id="firmaAprendizPreviewWrapper" style="display:none;">
+                                            <img id="firmaAprendizPreview" src="" alt="Firma del aprendiz" class="img-thumbnail" style="max-height:100px;">
+                                            <button type="button" class="btn btn-sm btn-outline-danger ml-2 no-print btnQuitarFirma" data-target="firmaAprendiz">
+                                                <i class="fas fa-times"></i> Quitar
+                                            </button>
+                                        </div>
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label class="bitacora-required">Fecha entrega bitácora</label>
@@ -436,12 +502,30 @@
                                 </div>
                                 <div class="row">
                                     <div class="form-group col-md-6">
-                                        <label>Firma del instructor de seguimiento</label>
-                                        <input type="text" class="form-control" name="firma_instructor" placeholder="Nombre / referencia de firma">
+                                        <label>Firma del instructor de seguimiento (imagen, opcional)</label>
+                                        <div class="custom-file">
+                                            <input type="file" class="custom-file-input firma-input" id="firmaInstructorInput" name="firma_instructor" accept="image/*">
+                                            <label class="custom-file-label" for="firmaInstructorInput">Seleccionar imagen...</label>
+                                        </div>
+                                        <div class="firma-preview-wrapper mt-2" id="firmaInstructorPreviewWrapper" style="display:none;">
+                                            <img id="firmaInstructorPreview" src="" alt="Firma del instructor" class="img-thumbnail" style="max-height:100px;">
+                                            <button type="button" class="btn btn-sm btn-outline-danger ml-2 no-print btnQuitarFirma" data-target="firmaInstructor">
+                                                <i class="fas fa-times"></i> Quitar
+                                            </button>
+                                        </div>
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label>Firma del ente co-formador</label>
-                                        <input type="text" class="form-control" name="firma_coformador" placeholder="Nombre / referencia de firma">
+                                        <label>Firma del ente co-formador (imagen, opcional)</label>
+                                        <div class="custom-file">
+                                            <input type="file" class="custom-file-input firma-input" id="firmaCoformadorInput" name="firma_coformador" accept="image/*">
+                                            <label class="custom-file-label" for="firmaCoformadorInput">Seleccionar imagen...</label>
+                                        </div>
+                                        <div class="firma-preview-wrapper mt-2" id="firmaCoformadorPreviewWrapper" style="display:none;">
+                                            <img id="firmaCoformadorPreview" src="" alt="Firma del ente co-formador" class="img-thumbnail" style="max-height:100px;">
+                                            <button type="button" class="btn btn-sm btn-outline-danger ml-2 no-print btnQuitarFirma" data-target="firmaCoformador">
+                                                <i class="fas fa-times"></i> Quitar
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 <p class="text-muted small mb-0">
@@ -504,11 +588,110 @@
     <script src="js/sb-admin-2.min.js"></script>
 
     <script>
+        // Cálculo automático del período (15 días por bitácora, máx. 12 bitácoras = 6 meses)
+        var DIAS_POR_BITACORA = 15;
+        var MAX_BITACORAS = 12;
+
+        function formatFechaInput(d) {
+            var y = d.getUTCFullYear();
+            var m = String(d.getUTCMonth() + 1).padStart(2, '0');
+            var day = String(d.getUTCDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        }
+
+        function formatFechaVisible(d) {
+            return formatFechaInput(d).split('-').reverse().join('/');
+        }
+
+        function parseFechaInput(str) {
+            var partes = str.split('-');
+            return new Date(Date.UTC(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10)));
+        }
+
+        function calcularPeriodo() {
+            var fechaInicioStr = document.getElementById('fechaInicioEtapa').value;
+            var numero = parseInt(document.getElementById('bitacoraNumero').value, 10);
+            var periodoDesdeInput = document.getElementById('periodoDesde');
+            var periodoHastaInput = document.getElementById('periodoHasta');
+            var resumen = document.getElementById('resumenEtapa');
+
+            if (!fechaInicioStr || !numero) {
+                periodoDesdeInput.value = '';
+                periodoHastaInput.value = '';
+                if (resumen) resumen.textContent = '';
+                return;
+            }
+
+            var inicioEtapa = parseFechaInput(fechaInicioStr);
+
+            var desde = new Date(inicioEtapa);
+            desde.setUTCDate(desde.getUTCDate() + (numero - 1) * DIAS_POR_BITACORA);
+
+            var hasta = new Date(desde);
+            hasta.setUTCDate(hasta.getUTCDate() + DIAS_POR_BITACORA - 1);
+
+            periodoDesdeInput.value = formatFechaInput(desde);
+            periodoHastaInput.value = formatFechaInput(hasta);
+
+            var finEtapa = new Date(inicioEtapa);
+            finEtapa.setUTCDate(finEtapa.getUTCDate() + (MAX_BITACORAS * DIAS_POR_BITACORA) - 1);
+
+            if (resumen) {
+                resumen.textContent = 'Etapa productiva: ' + formatFechaVisible(inicioEtapa) + ' al ' +
+                    formatFechaVisible(finEtapa) + ' (' + MAX_BITACORAS + ' bitácoras de ' + DIAS_POR_BITACORA +
+                    ' días cada una, ' + (MAX_BITACORAS * DIAS_POR_BITACORA) + ' días ≈ 6 meses).';
+            }
+        }
+
+        document.getElementById('fechaInicioEtapa').addEventListener('change', calcularPeriodo);
+        document.getElementById('bitacoraNumero').addEventListener('change', calcularPeriodo);
+
+        // Carga y vista previa de firmas (imagen)
+        function configurarFirma(prefijo) {
+            var input = document.getElementById(prefijo + 'Input');
+            var previewWrapper = document.getElementById(prefijo + 'PreviewWrapper');
+            var preview = document.getElementById(prefijo + 'Preview');
+            var fileLabel = input.nextElementSibling; // .custom-file-label
+
+            input.addEventListener('change', function () {
+                var file = input.files && input.files[0];
+                if (!file) return;
+                if (fileLabel) fileLabel.textContent = file.name;
+
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    previewWrapper.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        ['firmaAprendiz', 'firmaInstructor', 'firmaCoformador'].forEach(configurarFirma);
+
+        document.querySelectorAll('.btnQuitarFirma').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var prefijo = btn.getAttribute('data-target');
+                var input = document.getElementById(prefijo + 'Input');
+                var previewWrapper = document.getElementById(prefijo + 'PreviewWrapper');
+                var preview = document.getElementById(prefijo + 'Preview');
+                var fileLabel = input.nextElementSibling;
+
+                input.value = '';
+                preview.src = '';
+                previewWrapper.style.display = 'none';
+                if (fileLabel) fileLabel.textContent = 'Seleccionar imagen...';
+            });
+        });
+
         // Agregar / quitar filas en la tabla de actividades
         document.getElementById('btnAddActividad').addEventListener('click', function () {
             var tbody = document.querySelector('#tablaActividades tbody');
             var newRow = tbody.querySelector('.actividad-row').cloneNode(true);
-            newRow.querySelectorAll('input, textarea').forEach(function (el) { el.value = ''; });
+            newRow.querySelectorAll('input, textarea').forEach(function (el) {
+                el.value = '';
+                el.classList.remove('is-invalid');
+            });
             tbody.appendChild(newRow);
         });
 
@@ -516,10 +699,103 @@
             var btn = e.target.closest('.btnRemoveActividad');
             if (!btn) return;
             var rows = document.querySelectorAll('#tablaActividades tbody tr');
-            if (rows.length > 1) {
+            var MIN_FILAS_ACTIVIDADES = 3;
+            if (rows.length > MIN_FILAS_ACTIVIDADES) {
                 btn.closest('tr').remove();
+            } else {
+                alert('Debe mantener al menos ' + MIN_FILAS_ACTIVIDADES + ' actividades registradas.');
             }
         });
+
+        // Validación de la tabla de actividades: mínimo 3 filas completas, descripciones/competencias
+        // únicas (no repetidas), fechas dentro del período de la bitácora, y evidencia obligatoria.
+        function validarActividades() {
+            var errores = [];
+            var filas = Array.from(document.querySelectorAll('#tablaActividades tbody tr'));
+            var descripciones = [];
+            var competencias = [];
+            var periodoDesde = document.getElementById('periodoDesde').value;
+            var periodoHasta = document.getElementById('periodoHasta').value;
+            var filasCompletas = 0;
+
+            filas.forEach(function (fila, idx) {
+                var numFila = idx + 1;
+                var descInput = fila.querySelector('[name="actividad_descripcion[]"]');
+                var compInput = fila.querySelector('[name="actividad_competencias[]"]');
+                var fiInput = fila.querySelector('[name="actividad_fecha_inicio[]"]');
+                var ffInput = fila.querySelector('[name="actividad_fecha_fin[]"]');
+                var evInput = fila.querySelector('[name="actividad_evidencia[]"]');
+
+                var desc = descInput.value.trim();
+                var comp = compInput.value.trim();
+                var fi = fiInput.value;
+                var ff = ffInput.value;
+                var ev = evInput.value.trim();
+
+                var filaVacia = !desc && !comp && !fi && !ff && !ev;
+                if (filaVacia) return;
+
+                var filaOk = true;
+
+                if (!desc) { descInput.classList.add('is-invalid'); errores.push('Actividad ' + numFila + ': la descripción es obligatoria.'); filaOk = false; }
+                if (!comp) { compInput.classList.add('is-invalid'); errores.push('Actividad ' + numFila + ': las competencias aplicadas son obligatorias.'); filaOk = false; }
+                if (!fi) { fiInput.classList.add('is-invalid'); errores.push('Actividad ' + numFila + ': la fecha de inicio es obligatoria.'); filaOk = false; }
+                if (!ff) { ffInput.classList.add('is-invalid'); errores.push('Actividad ' + numFila + ': la fecha de fin es obligatoria.'); filaOk = false; }
+                if (!ev) { evInput.classList.add('is-invalid'); errores.push('Actividad ' + numFila + ': la evidencia de cumplimiento es obligatoria.'); filaOk = false; }
+
+                if (fi && ff && fi > ff) {
+                    ffInput.classList.add('is-invalid');
+                    errores.push('Actividad ' + numFila + ': la fecha de fin no puede ser anterior a la fecha de inicio.');
+                    filaOk = false;
+                }
+
+                if (periodoDesde && periodoHasta) {
+                    if (fi && (fi < periodoDesde || fi > periodoHasta)) {
+                        fiInput.classList.add('is-invalid');
+                        errores.push('Actividad ' + numFila + ': la fecha de inicio debe estar dentro del período de la bitácora (' + periodoDesde + ' a ' + periodoHasta + ').');
+                        filaOk = false;
+                    }
+                    if (ff && (ff < periodoDesde || ff > periodoHasta)) {
+                        ffInput.classList.add('is-invalid');
+                        errores.push('Actividad ' + numFila + ': la fecha de fin debe estar dentro del período de la bitácora (' + periodoDesde + ' a ' + periodoHasta + ').');
+                        filaOk = false;
+                    }
+                } else if (fi || ff) {
+                    errores.push('Actividad ' + numFila + ': define primero la fecha de inicio de la etapa y el número de bitácora para validar el período.');
+                }
+
+                if (desc) {
+                    var descNorm = desc.toLowerCase();
+                    if (descripciones.indexOf(descNorm) !== -1) {
+                        descInput.classList.add('is-invalid');
+                        errores.push('Actividad ' + numFila + ': la descripción está repetida; cada actividad debe ser diferente.');
+                        filaOk = false;
+                    } else {
+                        descripciones.push(descNorm);
+                    }
+                }
+                if (comp) {
+                    var compNorm = comp.toLowerCase();
+                    if (competencias.indexOf(compNorm) !== -1) {
+                        compInput.classList.add('is-invalid');
+                        errores.push('Actividad ' + numFila + ': la competencia está repetida; cada competencia debe ser diferente.');
+                        filaOk = false;
+                    } else {
+                        competencias.push(compNorm);
+                    }
+                }
+
+                if (filaOk && desc && comp && fi && ff && ev) {
+                    filasCompletas++;
+                }
+            });
+
+            if (filasCompletas < 3) {
+                errores.push('Debe registrar al menos 3 actividades completas (descripción, competencias, fechas y evidencia).');
+            }
+
+            return errores;
+        }
 
         // TODO: conectar la generación real de Word/PDF/Excel con los datos del formulario.
         // Por ahora estos botones son marcadores de posición para la siguiente fase del proyecto.
@@ -530,20 +806,51 @@
 
         document.getElementById('btnDescargarWord').addEventListener('click', function (e) {
             e.preventDefault();
+            var errores = validarActividades();
+            if (errores.length > 0) {
+                mostrarErrores(errores);
+                return;
+            }
             alert('Descarga en Word: pendiente de implementar en la siguiente fase.');
         });
         document.getElementById('btnDescargarPDF').addEventListener('click', function (e) {
             e.preventDefault();
+            var errores = validarActividades();
+            if (errores.length > 0) {
+                mostrarErrores(errores);
+                return;
+            }
             alert('Descarga en PDF: pendiente de implementar en la siguiente fase.');
         });
         document.getElementById('btnDescargarExcel').addEventListener('click', function (e) {
             e.preventDefault();
+            var errores = validarActividades();
+            if (errores.length > 0) {
+                mostrarErrores(errores);
+                return;
+            }
             alert('Descarga en Excel: pendiente de implementar en la siguiente fase.');
         });
 
+        function mostrarErrores(errores) {
+            var contenedor = document.getElementById('erroresValidacion');
+            contenedor.innerHTML = '<strong>Corrige lo siguiente antes de continuar:</strong><ul class="mb-0">' +
+                errores.map(function (er) { return '<li>' + er + '</li>'; }).join('') + '</ul>';
+            contenedor.classList.remove('d-none');
+            contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
         document.getElementById('formBitacora').addEventListener('submit', function (e) {
             e.preventDefault();
-            alert('Bitácora guardada localmente (pendiente de conectar a backend/almacenamiento).');
+            document.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
+            document.getElementById('erroresValidacion').classList.add('d-none');
+
+            var errores = validarActividades();
+            if (errores.length > 0) {
+                mostrarErrores(errores);
+                return;
+            }
+            alert('Formulario válido. (La generación de las 12 bitácoras se conectará en la siguiente fase.)');
         });
     </script>
 
