@@ -49,29 +49,29 @@
 
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
                 <div class="sidebar-brand-icon rotate-n-15">
-                    <i class="fas fa-laugh-wink"></i>
+                    <i class="bi bi-file-earmark-text"></i>
                 </div>
                 <div class="sidebar-brand-text mx-3">FORMULARIO BITACORA</div>
             </a>
 
             <hr class="sidebar-divider my-0">
 
-            <!-- Nav Item - Dashboard -->
             <li class="nav-item">
                 <a class="nav-link" href="index.html">
                     <i class="bi bi-house"></i>
-                    <span>Inicio</span></a>
+                    <span>INICIO</span></a>
             </li>
 
             <hr class="sidebar-divider">
 
             <li class="nav-item active">
                 <a class="nav-link" href="buttons.html">
-                    <i class="bi bi-file-earmark-text"></i>
+                    <i class="fas fa-fw fa-book"></i>
                     <span>Bitacora</span>
                 </a>
             </li>
 
+            <!-- Vista Previa -->
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-target="#collapseUtilities"
                     aria-expanded="true" aria-controls="collapseUtilities">
@@ -197,13 +197,13 @@
                                     </div>
                                     <div class="form-group col-md-3">
                                         <label class="bitacora-required">Número de identificación</label>
-                                        <input type="text" class="form-control" name="aprendiz_num_doc" required>
+                                        <input type="text" class="form-control solo-numero" name="aprendiz_num_doc" inputmode="numeric" pattern="[0-9]*" required>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="form-group col-md-4">
                                         <label class="bitacora-required">Contacto telefónico</label>
-                                        <input type="tel" class="form-control" name="aprendiz_telefono" required>
+                                        <input type="tel" class="form-control solo-numero" name="aprendiz_telefono" inputmode="numeric" pattern="[0-9]*" required>
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label class="bitacora-required">Correo electrónico institucional</label>
@@ -223,7 +223,7 @@
                                 <div class="row">
                                     <div class="form-group col-md-4">
                                         <label class="bitacora-required">Número de grupo (ficha)</label>
-                                        <input type="text" class="form-control" name="aprendiz_ficha" required>
+                                        <input type="text" class="form-control solo-numero" name="aprendiz_ficha" inputmode="numeric" pattern="[0-9]*" required>
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label class="bitacora-required">Modalidad de formación</label>
@@ -277,7 +277,7 @@
                                     </div>
                                     <div class="form-group col-md-2">
                                         <label class="bitacora-required">NIT</label>
-                                        <input type="text" class="form-control" name="empresa_nit" required>
+                                        <input type="text" class="form-control solo-numero" name="empresa_nit" inputmode="numeric" pattern="[0-9]*" required>
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label class="bitacora-required">Dirección de la entidad</label>
@@ -304,7 +304,7 @@
                                     </div>
                                     <div class="form-group col-md-2">
                                         <label class="bitacora-required">Contacto telefónico</label>
-                                        <input type="tel" class="form-control" name="coformador_telefono" required>
+                                        <input type="tel" class="form-control solo-numero" name="coformador_telefono" inputmode="numeric" pattern="[0-9]*" required>
                                     </div>
                                     <div class="form-group col-md-3">
                                         <label class="bitacora-required">Correo electrónico</label>
@@ -651,6 +651,30 @@
 
         document.getElementById('fechaInicioEtapa').addEventListener('change', calcularPeriodo);
         document.getElementById('bitacoraNumero').addEventListener('change', calcularPeriodo);
+
+        // Restringir a solo números los campos marcados con la clase "solo-numero"
+        document.querySelectorAll('.solo-numero').forEach(function (input) {
+            input.addEventListener('input', function () {
+                var soloDigitos = input.value.replace(/[^0-9]/g, '');
+                if (input.value !== soloDigitos) {
+                    input.value = soloDigitos;
+                }
+            });
+            // Bloquea también teclas no numéricas (permite navegación, borrar, pegar, etc.)
+            input.addEventListener('keypress', function (e) {
+                if (e.key.length === 1 && !/[0-9]/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+            // Limpia si pegan texto con caracteres no numéricos
+            input.addEventListener('paste', function (e) {
+                var texto = (e.clipboardData || window.clipboardData).getData('text');
+                if (/[^0-9]/.test(texto)) {
+                    e.preventDefault();
+                    input.value = (input.value + texto.replace(/[^0-9]/g, ''));
+                }
+            });
+        });
 
         // Carga y vista previa de firmas (imagen)
         function configurarFirma(prefijo) {
