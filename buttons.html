@@ -678,6 +678,7 @@
         var ESTADO = { campos: {}, alternativa: '', actividades: [], firmas: {}, porBitacora: {} };
         var numeroActual = '';
 
+<<<<<<< HEAD
         function cargarEstadoDesdeStorage() {
             var raw;
             try { raw = sessionStorage.getItem(FORM_STATE_KEY); } catch (e) { return; }
@@ -904,6 +905,9 @@
         // ============================================================
         //  Restricción "solo número" en documento, teléfono y ficha
         // ============================================================
+=======
+        // Restringir a solo números los campos marcados con la clase "solo-numero"
+>>>>>>> 16adb7d (Modificaciones en los archivos index, charts, button y la carpeta de imagenes)
         document.querySelectorAll('.solo-numero').forEach(function (input) {
             input.addEventListener('input', function () {
                 var soloDigitos = input.value.replace(/[^0-9]/g, '');
@@ -911,11 +915,19 @@
                     input.value = soloDigitos;
                 }
             });
+<<<<<<< HEAD
+=======
+            // Bloquea también teclas no numéricas (permite navegación, borrar, pegar, etc.)
+>>>>>>> 16adb7d (Modificaciones en los archivos index, charts, button y la carpeta de imagenes)
             input.addEventListener('keypress', function (e) {
                 if (e.key.length === 1 && !/[0-9]/.test(e.key)) {
                     e.preventDefault();
                 }
             });
+<<<<<<< HEAD
+=======
+            // Limpia si pegan texto con caracteres no numéricos
+>>>>>>> 16adb7d (Modificaciones en los archivos index, charts, button y la carpeta de imagenes)
             input.addEventListener('paste', function (e) {
                 var texto = (e.clipboardData || window.clipboardData).getData('text');
                 if (/[^0-9]/.test(texto)) {
@@ -925,9 +937,13 @@
             });
         });
 
+<<<<<<< HEAD
         // ============================================================
         //  Firmas (imagen) — una sola vez, prevalecen en las 12 bitácoras
         // ============================================================
+=======
+        // Carga y vista previa de firmas (imagen)
+>>>>>>> 16adb7d (Modificaciones en los archivos index, charts, button y la carpeta de imagenes)
         function configurarFirma(prefijo) {
             var input = document.getElementById(prefijo + 'Input');
             var previewWrapper = document.getElementById(prefijo + 'PreviewWrapper');

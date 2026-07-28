@@ -22,6 +22,26 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
+    <style>
+        .video-instructivo-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; /* proporción 16:9 */
+            height: 0;
+            overflow: hidden;
+            background-color: #000;
+            border-radius: 0.35rem;
+        }
+        .video-instructivo-wrapper video,
+        .video-instructivo-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+    </style>
+
 </head>
 
 <body id="page-top">
@@ -60,7 +80,7 @@
 
             <!-- Nav Item - Pages Collapse Menu -->
             <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-target="#collapseTwo"
+                <a class="nav-link collapsed" href="buttons.html" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="bi bi-file-earmark-text"></i>
                     <span>Bitacoras</span>
@@ -97,6 +117,73 @@
 
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
+
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">Ayuda</h1>
+                    </div>
+
+                    <!-- Instructivo de llenado -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                <i class="bi bi-file-earmark-text mr-2"></i>Instructivo de llenado — Formato Bitácora (GFPI-F-147)
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p>Sigue estos pasos para diligenciar correctamente el formulario de bitácoras:</p>
+                            <ol>
+                                <li><strong>Fecha de inicio de la etapa productiva:</strong> ingrésala una sola vez. A partir de ahí el sistema calcula automáticamente los períodos de las 12 bitácoras (15 días cada una, 6 meses en total).</li>
+                                <li><strong>Bitácora N°:</strong> selecciona el número (1 a 12) que vas a diligenciar; las fechas "Desde" y "Hasta" del período se completan solas.</li>
+                                <li><strong>Datos del aprendiz:</strong> completa documento, contacto, correos, ficha, programa y modalidad de formación.</li>
+                                <li><strong>Datos del ente co-formador:</strong> registra la empresa/entidad y la persona encargada del proceso formativo (jefe inmediato o supervisor).</li>
+                                <li><strong>Datos del instructor de seguimiento:</strong> nombre y correo institucional.</li>
+                                <li><strong>Alternativa de etapa productiva:</strong> selecciona solo una opción (contrato de aprendizaje, monitoria, proyecto productivo, vínculo formativo o vínculo laboral).</li>
+                                <li><strong>Actividades realizadas:</strong> describe mínimo 3 actividades, cada una con su competencia aplicada (sin repetir descripciones ni competencias entre sí), fechas dentro del período de la bitácora, y evidencia de cumplimiento obligatoria. Las observaciones son opcionales.</li>
+                                <li><strong>Afiliación ARL:</strong> indica si el aprendiz está afiliado, el nivel de riesgo actual y si cuenta con los elementos de protección.</li>
+                                <li><strong>Firmas:</strong> sube la imagen de la firma del aprendiz (obligatoria); las firmas del instructor y del ente co-formador son opcionales.</li>
+                                <li><strong>Descarga:</strong> revisa que no queden campos marcados en rojo y descarga el formato en Word, PDF o Excel.</li>
+                            </ol>
+                            <div class="alert alert-warning mb-0">
+                                <i class="bi bi-exclamation-triangle mr-1"></i>
+                                Ten en cuenta: este formulario no guarda información en ningún servidor. Si cierras o recargas la pestaña antes de descargar, los datos se pierden y debes empezar de nuevo.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Video instructivo -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                <i class="bi bi-camera-video mr-2"></i>Video instructivo
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small">Mira este video para ver el paso a paso del diligenciamiento de la bitácora.</p>
+
+                            <div class="video-instructivo-wrapper">
+                                <!-- OPCIÓN A (recomendada): video propio, alojado dentro de tu proyecto.
+                                     Siempre reproduce el mismo archivo fijo, sin depender de internet
+                                     ni de sugerencias externas de otros videos. -->
+                                <video controls preload="metadata" poster="img/video-instructivo-poster.svg">
+                                    <source src="video/instructivo-bitacoras.mp4" type="video/mp4">
+                                    Tu navegador no soporta la reproducción de video HTML5.
+                                </video>
+
+                                <!-- OPCIÓN B: YouTube (comenta/borra el <video> de arriba para usar esta).
+                                     Reemplaza VIDEO_ID por el ID de tu video. El parámetro rel=0 limita
+                                     los videos sugeridos al final a los de tu mismo canal.
+                                <iframe src="https://www.youtube.com/embed/VIDEO_ID?rel=0"
+                                    title="Video instructivo bitácoras" allowfullscreen></iframe>
+                                -->
+
+                                <!-- OPCIÓN C: Vimeo (alternativa, sin videos sugeridos de otros autores).
+                                <iframe src="https://player.vimeo.com/video/VIDEO_ID?title=0&byline=0&portrait=0"
+                                    title="Video instructivo bitácoras" allowfullscreen></iframe>
+                                -->
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
                 <!-- /.container-fluid -->
 

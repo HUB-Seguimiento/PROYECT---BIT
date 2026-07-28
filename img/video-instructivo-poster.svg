@@ -1,0 +1,56 @@
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4e73df"/>
+      <stop offset="100%" stop-color="#224abe"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#12265c" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Fondo -->
+  <rect width="1280" height="720" fill="url(#bgGradient)"/>
+  <rect width="1280" height="720" fill="url(#glow)"/>
+
+  <!-- Formas decorativas sutiles -->
+  <circle cx="1120" cy="120" r="180" fill="#ffffff" opacity="0.05"/>
+  <circle cx="120" cy="640" r="220" fill="#ffffff" opacity="0.05"/>
+  <path d="M0,600 Q320,520 640,600 T1280,600 V720 H0 Z" fill="#ffffff" opacity="0.04"/>
+
+  <!-- Icono documento (arriba) -->
+  <g transform="translate(590,110)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="100" height="130" rx="10" fill="#ffffff"/>
+    <rect x="18" y="26" width="64" height="8" rx="4" fill="#4e73df"/>
+    <rect x="18" y="46" width="64" height="8" rx="4" fill="#c9d5f7"/>
+    <rect x="18" y="66" width="44" height="8" rx="4" fill="#c9d5f7"/>
+    <path d="M62,86 l10,10 l18,-20" fill="none" stroke="#1cc88a" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Título -->
+  <text x="640" y="330" text-anchor="middle" font-family="Nunito, Arial, sans-serif" font-size="52" font-weight="800" fill="#ffffff">
+    Cómo diligenciar tu Bitácora
+  </text>
+  <text x="640" y="378" text-anchor="middle" font-family="Nunito, Arial, sans-serif" font-size="24" font-weight="400" fill="#dce3f9">
+    Formato GFPI-F-147 · Etapa Productiva
+  </text>
+
+  <!-- Botón de reproducción -->
+  <g filter="url(#softShadow)">
+    <circle cx="640" cy="480" r="58" fill="#ffffff"/>
+    <circle cx="640" cy="480" r="58" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="10"/>
+    <path d="M622,452 L672,480 L622,508 Z" fill="#4e73df"/>
+  </g>
+
+  <!-- Duración -->
+  <g transform="translate(560,560)">
+    <rect x="0" y="0" width="160" height="40" rx="20" fill="#ffffff" opacity="0.15"/>
+    <text x="80" y="26" text-anchor="middle" font-family="Nunito, Arial, sans-serif" font-size="18" font-weight="700" fill="#ffffff">
+      ⏱ 1:30 min
+    </text>
+  </g>
+</svg>
