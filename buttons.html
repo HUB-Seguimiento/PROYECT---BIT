@@ -607,6 +607,12 @@
     <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
     <script src="js/sb-admin-2.min.js"></script>
 
+    <!-- Librerías para generar los documentos reales (Excel, PDF, Word) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
+
     <script>
         // ============================================================
         //  Cálculo automático del período (15 días por bitácora, máx. 12 = 6 meses)
@@ -630,20 +636,11 @@
             return new Date(Date.UTC(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10)));
         }
 
-        function calcularPeriodo() {
-            var fechaInicioStr = document.getElementById('fechaInicioEtapa').value;
-            var numero = parseInt(document.getElementById('bitacoraNumero').value, 10);
-            var periodoDesdeInput = document.getElementById('periodoDesde');
-            var periodoHastaInput = document.getElementById('periodoHasta');
-            var resumen = document.getElementById('resumenEtapa');
-
-            if (!fechaInicioStr || !numero) {
-                periodoDesdeInput.value = '';
-                periodoHastaInput.value = '';
-                if (resumen) resumen.textContent = '';
-                return;
-            }
-
+        // Calcula {desde, hasta} (strings yyyy-mm-dd) para cualquier bitácora N, sin tocar el DOM.
+        // La usan tanto calcularPeriodo() (para lo que se ve en pantalla) como el generador de
+        // documentos (para calcular el período de las 12 bitácoras de una sola vez).
+        function periodoParaNumero(fechaInicioStr, numero) {
+            if (!fechaInicioStr || !numero) return null;
             var inicioEtapa = parseFechaInput(fechaInicioStr);
 
             var desde = new Date(inicioEtapa);
@@ -652,8 +649,27 @@
             var hasta = new Date(desde);
             hasta.setUTCDate(hasta.getUTCDate() + DIAS_POR_BITACORA - 1);
 
-            periodoDesdeInput.value = formatFechaInput(desde);
-            periodoHastaInput.value = formatFechaInput(hasta);
+            return { desde: formatFechaInput(desde), hasta: formatFechaInput(hasta) };
+        }
+
+        function calcularPeriodo() {
+            var fechaInicioStr = document.getElementById('fechaInicioEtapa').value;
+            var numero = parseInt(document.getElementById('bitacoraNumero').value, 10);
+            var periodoDesdeInput = document.getElementById('periodoDesde');
+            var periodoHastaInput = document.getElementById('periodoHasta');
+            var resumen = document.getElementById('resumenEtapa');
+
+            var periodo = periodoParaNumero(fechaInicioStr, numero);
+            if (!periodo) {
+                periodoDesdeInput.value = '';
+                periodoHastaInput.value = '';
+                if (resumen) resumen.textContent = '';
+                return;
+            }
+
+            var inicioEtapa = parseFechaInput(fechaInicioStr);
+            periodoDesdeInput.value = periodo.desde;
+            periodoHastaInput.value = periodo.hasta;
 
             var finEtapa = new Date(inicioEtapa);
             finEtapa.setUTCDate(finEtapa.getUTCDate() + (MAX_BITACORAS * DIAS_POR_BITACORA) - 1);
@@ -1104,30 +1120,415 @@
         }
 
         // ============================================================
-        //  Descarga / guardado (marcadores de posición para la siguiente fase)
+        //  Utilidades para imágenes (firmas y evidencias) en PDF/Word
         // ============================================================
-        function recolectarDatosFormulario() {
-            var form = document.getElementById('formBitacora');
-            return new FormData(form);
+        function dataUrlABytes(dataUrl) {
+            var base64 = dataUrl.split(',')[1];
+            var binario = atob(base64);
+            var bytes = new Uint8Array(binario.length);
+            for (var i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+            return bytes;
         }
 
+        function formatoImagenDesdeDataUrl(dataUrl) {
+            if (!dataUrl) return 'PNG';
+            if (dataUrl.indexOf('image/jpeg') !== -1 || dataUrl.indexOf('image/jpg') !== -1) return 'JPEG';
+            if (dataUrl.indexOf('image/webp') !== -1) return 'WEBP';
+            return 'PNG';
+        }
+
+        function descargarBlob(blob, nombreArchivo) {
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = nombreArchivo;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        }
+
+        // ============================================================
+        //  Recolección de los datos completos de las 12 bitácoras
+        // ============================================================
+        function obtenerEvidenciasParaBitacora(numero, fechaInicioEtapa) {
+            var periodo = periodoParaNumero(fechaInicioEtapa, numero);
+            var totalActividades = contarActividadesPlantilla();
+            var guardadas = ESTADO.porBitacora[numero] || [];
+            var resultado = [];
+            for (var i = 0; i < totalActividades; i++) {
+                var datos = guardadas[i] || {};
+                resultado.push({
+                    fecha_inicio: datos.fecha_inicio || (periodo ? periodo.desde : ''),
+                    fecha_fin: datos.fecha_fin || (periodo ? periodo.hasta : ''),
+                    evidencia_texto: datos.evidencia_texto || '',
+                    evidencia_imagen: datos.evidencia_imagen || null,
+                    observaciones: datos.observaciones || ''
+                });
+            }
+            return resultado;
+        }
+
+        function recolectarDatosCompletos() {
+            var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
+            var bitacoras = [];
+            for (var n = 1; n <= MAX_BITACORAS; n++) {
+                var periodo = periodoParaNumero(fechaInicioEtapa, n);
+                bitacoras.push({
+                    numero: n,
+                    periodoDesde: periodo ? periodo.desde : '',
+                    periodoHasta: periodo ? periodo.hasta : '',
+                    evidencias: obtenerEvidenciasParaBitacora(n, fechaInicioEtapa)
+                });
+            }
+            return {
+                campos: ESTADO.campos,
+                alternativa: ESTADO.alternativa,
+                actividades: ESTADO.actividades,
+                firmas: ESTADO.firmas,
+                bitacoras: bitacoras
+            };
+        }
+
+        // Valida TODO (campos comunes + plantilla + evidencias de las 12 bitácoras) antes de generar.
+        // Devuelve los datos completos si todo está bien, o null si hay que corregir algo.
+        function validarTodoAntesDeGenerar() {
+            guardarEstado();
+
+            var form = document.getElementById('formBitacora');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return null;
+            }
+
+            document.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
+            document.getElementById('erroresValidacion').classList.add('d-none');
+
+            var errores = validarActividades(); // plantilla + evidencias de la bitácora que se ve en pantalla
+
+            var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
+            for (var n = 1; n <= MAX_BITACORAS; n++) {
+                if (String(n) === String(numeroActual)) continue; // esa ya se validó arriba, con resaltado visual
+                var periodo = periodoParaNumero(fechaInicioEtapa, n);
+                var evidencias = obtenerEvidenciasParaBitacora(n, fechaInicioEtapa);
+                evidencias.forEach(function (ev, idx) {
+                    var numAct = idx + 1;
+                    if (!ev.fecha_inicio || !ev.fecha_fin) {
+                        errores.push('Bitácora ' + n + ', actividad ' + numAct + ': faltan las fechas de la evidencia (selecciona esa bitácora en el Encabezado para completarla).');
+                        return;
+                    }
+                    if (periodo && (ev.fecha_inicio < periodo.desde || ev.fecha_inicio > periodo.hasta || ev.fecha_fin < periodo.desde || ev.fecha_fin > periodo.hasta)) {
+                        errores.push('Bitácora ' + n + ', actividad ' + numAct + ': las fechas no están dentro de su período (' + periodo.desde + ' a ' + periodo.hasta + ').');
+                    }
+                    if (!ev.evidencia_texto && !ev.evidencia_imagen) {
+                        errores.push('Bitácora ' + n + ', actividad ' + numAct + ': falta la evidencia de cumplimiento (selecciona esa bitácora en el Encabezado para completarla).');
+                    }
+                });
+            }
+
+            if (errores.length > 0) {
+                mostrarErrores(errores);
+                return null;
+            }
+
+            return recolectarDatosCompletos();
+        }
+
+        // ============================================================
+        //  Generación de Excel (.xlsx) — 1 hoja por bitácora
+        //  Nota: la librería usada (SheetJS, gratuita) no admite incrustar imágenes,
+        //  así que en Excel la evidencia-imagen queda indicada como texto; en PDF y Word sí se incrusta.
+        // ============================================================
+        function generarExcel(datos) {
+            var wb = XLSX.utils.book_new();
+
+            datos.bitacoras.forEach(function (bit) {
+                var filas = [];
+                filas.push(['FORMATO BITÁCORA DE SEGUIMIENTO ETAPA PRODUCTIVA - GFPI-F-147']);
+                filas.push(['Bitácora N°', bit.numero, 'Período', bit.periodoDesde + ' a ' + bit.periodoHasta]);
+                filas.push([]);
+                filas.push(['DATOS DEL APRENDIZ']);
+                filas.push(['Nombre', datos.campos.aprendiz_nombre || '']);
+                filas.push(['Tipo de documento', datos.campos.aprendiz_tipo_doc || '', 'Número', datos.campos.aprendiz_num_doc || '']);
+                filas.push(['Contacto', datos.campos.aprendiz_telefono || '']);
+                filas.push(['Correo institucional', datos.campos.aprendiz_correo_institucional || '']);
+                filas.push(['Correo personal', datos.campos.aprendiz_correo_personal || '']);
+                filas.push(['Dirección', datos.campos.aprendiz_direccion || '']);
+                filas.push(['Ficha', datos.campos.aprendiz_ficha || '', 'Programa', datos.campos.aprendiz_programa || '']);
+                filas.push(['Modalidad de formación', datos.campos.aprendiz_modalidad_formacion || '']);
+                filas.push(['Modalidad de ejecución', datos.campos.modalidad_ejecucion || '', 'Etapa en el exterior', datos.campos.etapa_exterior || '', 'País', datos.campos.etapa_pais || '']);
+                filas.push([]);
+                filas.push(['DATOS DEL ENTE CO-FORMADOR']);
+                filas.push(['Empresa', datos.campos.empresa_nombre || '', 'NIT', datos.campos.empresa_nit || '']);
+                filas.push(['Dirección', datos.campos.empresa_direccion || '']);
+                filas.push(['Encargado', datos.campos.coformador_nombre || '', 'Cargo', datos.campos.coformador_cargo || '']);
+                filas.push(['Contacto', datos.campos.coformador_telefono || '', 'Correo', datos.campos.coformador_correo || '']);
+                filas.push([]);
+                filas.push(['INSTRUCTOR DE SEGUIMIENTO']);
+                filas.push(['Nombre', datos.campos.instructor_nombre || '', 'Correo', datos.campos.instructor_correo || '']);
+                filas.push([]);
+                filas.push(['ALTERNATIVA DE ETAPA PRODUCTIVA', datos.alternativa || '']);
+                filas.push([]);
+                filas.push(['ACTIVIDADES Y EVIDENCIAS']);
+                filas.push(['Descripción', 'Competencias', 'Fecha inicio', 'Fecha fin', 'Evidencia', 'Observaciones']);
+                datos.actividades.forEach(function (act, idx) {
+                    var ev = bit.evidencias[idx] || {};
+                    var evidenciaTexto = ev.evidencia_texto || (ev.evidencia_imagen ? '[Imagen adjunta: ver el PDF o Word de esta bitácora]' : '');
+                    filas.push([act.descripcion || '', act.competencias || '', ev.fecha_inicio || '', ev.fecha_fin || '', evidenciaTexto, ev.observaciones || '']);
+                });
+                filas.push([]);
+                filas.push(['AFILIACIÓN ARL']);
+                filas.push(['Afiliado', datos.campos.arl_afiliado || '', 'Nivel de riesgo', datos.campos.arl_nivel_riesgo || '', 'Corresponde', datos.campos.arl_nivel_corresponde || '', 'EPP', datos.campos.arl_epp || '']);
+                filas.push([]);
+                filas.push(['Fecha entrega bitácora', datos.campos.fecha_entrega || '']);
+
+                var ws = XLSX.utils.aoa_to_sheet(filas);
+                ws['!cols'] = [{ wch: 26 }, { wch: 26 }, { wch: 16 }, { wch: 16 }, { wch: 30 }, { wch: 30 }];
+                XLSX.utils.book_append_sheet(wb, ws, 'Bitacora ' + bit.numero);
+            });
+
+            XLSX.writeFile(wb, 'bitacoras_' + (datos.campos.aprendiz_num_doc || 'aprendiz') + '.xlsx');
+        }
+
+        // ============================================================
+        //  Generación de PDF — 1 sección por bitácora, con imágenes incrustadas
+        // ============================================================
+        function generarPDF(datos) {
+            var doc = new jspdf.jsPDF({ unit: 'pt', format: 'letter' });
+            var margenX = 40;
+
+            datos.bitacoras.forEach(function (bit, indiceBit) {
+                if (indiceBit > 0) doc.addPage();
+                var y = 40;
+
+                doc.setFontSize(13); doc.setFont(undefined, 'bold');
+                doc.text('FORMATO BITÁCORA DE SEGUIMIENTO ETAPA PRODUCTIVA', margenX, y);
+                y += 16;
+                doc.setFontSize(9); doc.setFont(undefined, 'normal');
+                doc.text('GFPI-F-147   |   Bitácora N° ' + bit.numero + '   |   Período: ' + bit.periodoDesde + ' a ' + bit.periodoHasta, margenX, y);
+                y += 16;
+
+                doc.autoTable({
+                    startY: y,
+                    margin: { left: margenX, right: margenX },
+                    styles: { fontSize: 8, cellPadding: 3 },
+                    theme: 'grid',
+                    body: [
+                        ['Aprendiz', datos.campos.aprendiz_nombre || '', 'Documento', (datos.campos.aprendiz_tipo_doc || '') + ' ' + (datos.campos.aprendiz_num_doc || '')],
+                        ['Contacto', datos.campos.aprendiz_telefono || '', 'Correo institucional', datos.campos.aprendiz_correo_institucional || ''],
+                        ['Ficha', datos.campos.aprendiz_ficha || '', 'Programa', datos.campos.aprendiz_programa || ''],
+                        ['Empresa', datos.campos.empresa_nombre || '', 'NIT', datos.campos.empresa_nit || ''],
+                        ['Encargado empresa', datos.campos.coformador_nombre || '', 'Cargo', datos.campos.coformador_cargo || ''],
+                        ['Instructor', datos.campos.instructor_nombre || '', 'Correo instructor', datos.campos.instructor_correo || ''],
+                        ['Alternativa', datos.alternativa || '', '', '']
+                    ]
+                });
+                y = doc.lastAutoTable.finalY + 14;
+
+                doc.setFontSize(10); doc.setFont(undefined, 'bold');
+                doc.text('Actividades y evidencias', margenX, y);
+
+                var filasTabla = datos.actividades.map(function (act, idx) {
+                    var ev = bit.evidencias[idx] || {};
+                    return [
+                        act.descripcion || '',
+                        act.competencias || '',
+                        (ev.fecha_inicio || '') + ' a ' + (ev.fecha_fin || ''),
+                        ev.evidencia_texto || (ev.evidencia_imagen ? '(ver imagen abajo)' : ''),
+                        ev.observaciones || ''
+                    ];
+                });
+
+                doc.autoTable({
+                    startY: y + 6,
+                    margin: { left: margenX, right: margenX },
+                    head: [['Descripción', 'Competencias', 'Período actividad', 'Evidencia', 'Observaciones']],
+                    body: filasTabla,
+                    styles: { fontSize: 7.5, cellPadding: 3 },
+                    headStyles: { fillColor: [78, 115, 223] }
+                });
+                y = doc.lastAutoTable.finalY + 16;
+
+                // Imágenes de evidencia
+                bit.evidencias.forEach(function (ev, idx) {
+                    if (!ev.evidencia_imagen) return;
+                    if (y > 640) { doc.addPage(); y = 40; }
+                    doc.setFontSize(8); doc.setFont(undefined, 'normal');
+                    doc.text('Evidencia (imagen) — actividad ' + (idx + 1) + ':', margenX, y);
+                    y += 8;
+                    try {
+                        doc.addImage(ev.evidencia_imagen, formatoImagenDesdeDataUrl(ev.evidencia_imagen), margenX, y, 160, 100);
+                    } catch (err) { /* formato de imagen no soportado, se omite */ }
+                    y += 112;
+                });
+
+                if (y > 600) { doc.addPage(); y = 40; }
+                doc.setFontSize(10); doc.setFont(undefined, 'bold');
+                doc.text('Afiliación ARL', margenX, y);
+                doc.autoTable({
+                    startY: y + 6,
+                    margin: { left: margenX, right: margenX },
+                    theme: 'grid',
+                    styles: { fontSize: 8 },
+                    body: [[
+                        'Afiliado: ' + (datos.campos.arl_afiliado || ''),
+                        'Nivel de riesgo: ' + (datos.campos.arl_nivel_riesgo || ''),
+                        'Corresponde: ' + (datos.campos.arl_nivel_corresponde || ''),
+                        'EPP: ' + (datos.campos.arl_epp || '')
+                    ]]
+                });
+                y = doc.lastAutoTable.finalY + 16;
+
+                if (y > 580) { doc.addPage(); y = 40; }
+                doc.setFontSize(10); doc.setFont(undefined, 'bold');
+                doc.text('Firmas', margenX, y);
+                y += 8;
+                doc.setFontSize(8); doc.setFont(undefined, 'normal');
+
+                ['firmaAprendiz', 'firmaInstructor', 'firmaCoformador'].forEach(function (prefijo, i) {
+                    var etiqueta = prefijo === 'firmaAprendiz' ? 'Aprendiz' : (prefijo === 'firmaInstructor' ? 'Instructor' : 'Ente co-formador');
+                    var xPos = margenX + i * 170;
+                    doc.text(etiqueta, xPos, y);
+                    if (datos.firmas[prefijo]) {
+                        try {
+                            doc.addImage(datos.firmas[prefijo], formatoImagenDesdeDataUrl(datos.firmas[prefijo]), xPos, y + 4, 150, 60);
+                        } catch (err) { /* noop */ }
+                    } else {
+                        doc.text('(sin firma)', xPos, y + 20);
+                    }
+                });
+            });
+
+            doc.save('bitacoras_' + (datos.campos.aprendiz_num_doc || 'aprendiz') + '.pdf');
+        }
+
+        // ============================================================
+        //  Generación de Word (.docx) — 1 sección por bitácora, con imágenes incrustadas
+        // ============================================================
+        function generarWord(datos) {
+            var Docx = window.docx;
+
+            function filaEtiquetaValor(etiqueta, valor) {
+                return new Docx.Paragraph({
+                    children: [
+                        new Docx.TextRun({ text: etiqueta + ': ', bold: true }),
+                        new Docx.TextRun({ text: valor || '' })
+                    ]
+                });
+            }
+
+            var secciones = datos.bitacoras.map(function (bit) {
+                var hijos = [];
+
+                hijos.push(new Docx.Paragraph({ text: 'FORMATO BITÁCORA DE SEGUIMIENTO ETAPA PRODUCTIVA (GFPI-F-147)', heading: Docx.HeadingLevel.HEADING_1 }));
+                hijos.push(new Docx.Paragraph({ text: 'Bitácora N° ' + bit.numero + ' — Período: ' + bit.periodoDesde + ' a ' + bit.periodoHasta }));
+                hijos.push(new Docx.Paragraph({ text: '' }));
+
+                hijos.push(new Docx.Paragraph({ text: 'Datos del aprendiz', heading: Docx.HeadingLevel.HEADING_2 }));
+                hijos.push(filaEtiquetaValor('Nombre', datos.campos.aprendiz_nombre));
+                hijos.push(filaEtiquetaValor('Documento', (datos.campos.aprendiz_tipo_doc || '') + ' ' + (datos.campos.aprendiz_num_doc || '')));
+                hijos.push(filaEtiquetaValor('Contacto', datos.campos.aprendiz_telefono));
+                hijos.push(filaEtiquetaValor('Correo institucional', datos.campos.aprendiz_correo_institucional));
+                hijos.push(filaEtiquetaValor('Correo personal', datos.campos.aprendiz_correo_personal));
+                hijos.push(filaEtiquetaValor('Dirección', datos.campos.aprendiz_direccion));
+                hijos.push(filaEtiquetaValor('Ficha', datos.campos.aprendiz_ficha));
+                hijos.push(filaEtiquetaValor('Programa', datos.campos.aprendiz_programa));
+
+                hijos.push(new Docx.Paragraph({ text: 'Datos del ente co-formador', heading: Docx.HeadingLevel.HEADING_2 }));
+                hijos.push(filaEtiquetaValor('Empresa', datos.campos.empresa_nombre));
+                hijos.push(filaEtiquetaValor('NIT', datos.campos.empresa_nit));
+                hijos.push(filaEtiquetaValor('Encargado', datos.campos.coformador_nombre));
+                hijos.push(filaEtiquetaValor('Cargo', datos.campos.coformador_cargo));
+
+                hijos.push(new Docx.Paragraph({ text: 'Instructor de seguimiento', heading: Docx.HeadingLevel.HEADING_2 }));
+                hijos.push(filaEtiquetaValor('Nombre', datos.campos.instructor_nombre));
+                hijos.push(filaEtiquetaValor('Correo', datos.campos.instructor_correo));
+
+                hijos.push(new Docx.Paragraph({ text: 'Alternativa de etapa productiva', heading: Docx.HeadingLevel.HEADING_2 }));
+                hijos.push(new Docx.Paragraph({ text: datos.alternativa || '' }));
+
+                hijos.push(new Docx.Paragraph({ text: 'Actividades y evidencias', heading: Docx.HeadingLevel.HEADING_2 }));
+
+                var filasTabla = [
+                    new Docx.TableRow({
+                        children: ['Descripción', 'Competencias', 'Período', 'Evidencia', 'Observaciones'].map(function (t) {
+                            return new Docx.TableCell({ children: [new Docx.Paragraph({ children: [new Docx.TextRun({ text: t, bold: true })] })] });
+                        })
+                    })
+                ];
+
+                datos.actividades.forEach(function (act, idx) {
+                    var ev = bit.evidencias[idx] || {};
+                    var celdaEvidenciaHijos = [new Docx.Paragraph({ text: ev.evidencia_texto || '' })];
+                    if (ev.evidencia_imagen) {
+                        celdaEvidenciaHijos.push(new Docx.Paragraph({
+                            children: [new Docx.ImageRun({ data: dataUrlABytes(ev.evidencia_imagen), transformation: { width: 140, height: 100 } })]
+                        }));
+                    }
+                    filasTabla.push(new Docx.TableRow({
+                        children: [
+                            new Docx.TableCell({ children: [new Docx.Paragraph({ text: act.descripcion || '' })] }),
+                            new Docx.TableCell({ children: [new Docx.Paragraph({ text: act.competencias || '' })] }),
+                            new Docx.TableCell({ children: [new Docx.Paragraph({ text: (ev.fecha_inicio || '') + ' a ' + (ev.fecha_fin || '') })] }),
+                            new Docx.TableCell({ children: celdaEvidenciaHijos }),
+                            new Docx.TableCell({ children: [new Docx.Paragraph({ text: ev.observaciones || '' })] })
+                        ]
+                    }));
+                });
+
+                hijos.push(new Docx.Table({ rows: filasTabla, width: { size: 100, type: Docx.WidthType.PERCENTAGE } }));
+                hijos.push(new Docx.Paragraph({ text: '' }));
+
+                hijos.push(new Docx.Paragraph({ text: 'Afiliación ARL', heading: Docx.HeadingLevel.HEADING_2 }));
+                hijos.push(filaEtiquetaValor('Afiliado', datos.campos.arl_afiliado));
+                hijos.push(filaEtiquetaValor('Nivel de riesgo', datos.campos.arl_nivel_riesgo));
+                hijos.push(filaEtiquetaValor('Corresponde a las actividades', datos.campos.arl_nivel_corresponde));
+                hijos.push(filaEtiquetaValor('Cuenta con EPP', datos.campos.arl_epp));
+                hijos.push(new Docx.Paragraph({ text: '' }));
+
+                hijos.push(new Docx.Paragraph({ text: 'Firmas', heading: Docx.HeadingLevel.HEADING_2 }));
+                ['firmaAprendiz', 'firmaInstructor', 'firmaCoformador'].forEach(function (prefijo) {
+                    var etiqueta = prefijo === 'firmaAprendiz' ? 'Firma del aprendiz' : (prefijo === 'firmaInstructor' ? 'Firma del instructor' : 'Firma del ente co-formador');
+                    hijos.push(new Docx.Paragraph({ children: [new Docx.TextRun({ text: etiqueta, bold: true })] }));
+                    if (datos.firmas[prefijo]) {
+                        hijos.push(new Docx.Paragraph({
+                            children: [new Docx.ImageRun({ data: dataUrlABytes(datos.firmas[prefijo]), transformation: { width: 150, height: 60 } })]
+                        }));
+                    } else {
+                        hijos.push(new Docx.Paragraph({ text: '(sin firma)' }));
+                    }
+                });
+
+                return { children: hijos };
+            });
+
+            var documento = new Docx.Document({ sections: secciones });
+
+            Docx.Packer.toBlob(documento).then(function (blob) {
+                descargarBlob(blob, 'bitacoras_' + (datos.campos.aprendiz_num_doc || 'aprendiz') + '.docx');
+            });
+        }
+
+        // ============================================================
+        //  Botones de descarga
+        // ============================================================
         document.getElementById('btnDescargarWord').addEventListener('click', function (e) {
             e.preventDefault();
-            var errores = validarActividades();
-            if (errores.length > 0) { mostrarErrores(errores); return; }
-            alert('Descarga en Word: pendiente de implementar en la siguiente fase.');
+            var datos = validarTodoAntesDeGenerar();
+            if (!datos) return;
+            generarWord(datos);
         });
         document.getElementById('btnDescargarPDF').addEventListener('click', function (e) {
             e.preventDefault();
-            var errores = validarActividades();
-            if (errores.length > 0) { mostrarErrores(errores); return; }
-            alert('Descarga en PDF: pendiente de implementar en la siguiente fase.');
+            var datos = validarTodoAntesDeGenerar();
+            if (!datos) return;
+            generarPDF(datos);
         });
         document.getElementById('btnDescargarExcel').addEventListener('click', function (e) {
             e.preventDefault();
-            var errores = validarActividades();
-            if (errores.length > 0) { mostrarErrores(errores); return; }
-            alert('Descarga en Excel: pendiente de implementar en la siguiente fase.');
+            var datos = validarTodoAntesDeGenerar();
+            if (!datos) return;
+            generarExcel(datos);
         });
 
         document.getElementById('formBitacora').addEventListener('submit', function (e) {
@@ -1138,7 +1539,7 @@
             var errores = validarActividades();
             if (errores.length > 0) { mostrarErrores(errores); return; }
             guardarEstado();
-            alert('Formulario válido. (La generación de las 12 bitácoras se conectará en la siguiente fase.)');
+            alert('Formulario válido. Usa el botón "Descargar formato" para generar las 12 bitácoras en Word, PDF o Excel.');
         });
 
         document.getElementById('btnLimpiarFormulario').addEventListener('click', function () {
