@@ -206,8 +206,8 @@
                                         <input type="tel" class="form-control solo-numero" name="aprendiz_telefono" inputmode="numeric" pattern="[0-9]*" required>
                                     </div>
                                     <div class="form-group col-md-4">
-                                        <label class="bitacora-required">Correo electrónico institucional</label>
-                                        <input type="email" class="form-control" name="aprendiz_correo_institucional" required>
+                                        <label>Correo electrónico institucional (opcional)</label>
+                                        <input type="email" class="form-control" name="aprendiz_correo_institucional">
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label class="bitacora-required">Correo electrónico personal</label>
@@ -561,6 +561,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://unpkg.com/docx@7.8.2/build/index.js"></script>
 
     <script>
@@ -1193,7 +1194,7 @@
                         XLSX.utils.book_append_sheet(wbSalida, hoja, 'Bitacora ' + bit.numero);
                     });
 
-                    XLSX.writeFile(wbSalida, 'bitacoras_' + (datos.campos.aprendiz_num_doc || 'aprendiz') + '.xlsx');
+                    XLSX.writeFile(wbSalida, construirNombreArchivo(datos) + '.xlsx');
                 })
                 .catch(function (err) {
                     console.error('Error generando Excel:', err);
@@ -1203,117 +1204,271 @@
         }
 
         // ============================================================
-        //  PDF — 1 sección por bitácora, con imágenes incrustadas
+        //  PDF — réplica visual del formato oficial (barras, tablas, casillas),
+        //  1 imagen/página por bitácora. Se arma el HTML con el mismo layout
+        //  del formato real y se rasteriza con html2canvas para incrustarlo en el PDF.
         // ============================================================
-        function generarPDF(datos) {
-            var doc = new jspdf.jsPDF({ unit: 'pt', format: 'letter' });
-            var margenX = 40;
+        var TEXTO_DECRETO = 'Decreto 055 de 2015, por el cual se reglamenta la afiliación de estudiantes al Sistema General de Riesgos Laborales y se dictan otras disposiciones';
+        var TEXTO_ESPACIO_OBLIGATORIO = 'Este espacio debe ser siempre diligenciado.';
+        var TEXTO_ARTICULO_11 = 'Artículo 11. Obligaciones de la institución de educación. Corresponde a las instituciones de educación a las que pertenezcan los estudiantes, que deban ser afiliados al Sistema General de Riesgos Laborales de conformidad con el presente decreto:';
+        var TEXTO_OBLIGACION_1 = '1. Revisar periódicamente que el estudiante en práctica desarrolle labores relacionadas exclusivamente con su programa de formación o educación, que ameritaron su afiliación al Sistema General de Riesgos Laborales.';
+        var TEXTO_OBLIGACION_2 = '2. Verificar que el espacio de práctica cuente con los elementos de protección personal apropiados según el riesgo ocupacional.';
 
-            datos.bitacoras.forEach(function (bit, indiceBit) {
-                if (indiceBit > 0) doc.addPage();
-                var y = 40;
-
-                doc.setFontSize(13); doc.setFont(undefined, 'bold');
-                doc.text('FORMATO BITÁCORA DE SEGUIMIENTO ETAPA PRODUCTIVA', margenX, y);
-                y += 16;
-                doc.setFontSize(9); doc.setFont(undefined, 'normal');
-                doc.text('GFPI-F-147   |   Bitácora N° ' + bit.numero + '   |   Período: ' + bit.periodoDesde + ' a ' + bit.periodoHasta, margenX, y);
-                y += 16;
-
-                doc.autoTable({
-                    startY: y,
-                    margin: { left: margenX, right: margenX },
-                    styles: { fontSize: 8, cellPadding: 3 },
-                    theme: 'grid',
-                    body: [
-                        ['Nombre completo del aprendiz', datos.campos.aprendiz_nombre || '', 'Tipo/Número de documento', (datos.campos.aprendiz_tipo_doc || '') + ' ' + (datos.campos.aprendiz_num_doc || '')],
-                        ['Contacto telefónico', datos.campos.aprendiz_telefono || '', 'Correo institucional', datos.campos.aprendiz_correo_institucional || ''],
-                        ['Número de grupo', datos.campos.aprendiz_ficha || '', 'Programa de formación', datos.campos.aprendiz_programa || ''],
-                        ['Nombre de la entidad co-formadora', datos.campos.empresa_nombre || '', 'NIT', datos.campos.empresa_nit || ''],
-                        ['Encargado (jefe/supervisor)', datos.campos.coformador_nombre || '', 'Cargo', datos.campos.coformador_cargo || ''],
-                        ['Instructor de seguimiento', datos.campos.instructor_nombre || '', 'Correo instructor', datos.campos.instructor_correo || ''],
-                        ['Alternativa de etapa productiva', datos.alternativa || '', '', '']
-                    ]
-                });
-                y = doc.lastAutoTable.finalY + 14;
-
-                doc.setFontSize(10); doc.setFont(undefined, 'bold');
-                doc.text('Descripción de las actividades realizadas', margenX, y);
-
-                var filasTabla = datos.actividades.map(function (act) {
-                    return [
-                        act.descripcion || '',
-                        act.competencias || '',
-                        (act.fecha_inicio || '') + ' a ' + (act.fecha_fin || ''),
-                        act.evidencia_texto || (act.evidencia_imagen ? '(ver imagen abajo)' : ''),
-                        act.observaciones || ''
-                    ];
-                });
-
-                doc.autoTable({
-                    startY: y + 6,
-                    margin: { left: margenX, right: margenX },
-                    head: [['Descripción de la actividad', 'Competencias aplicadas', 'Fecha inicio - fin', 'Evidencia de cumplimiento', 'Observaciones']],
-                    body: filasTabla,
-                    styles: { fontSize: 7.5, cellPadding: 3 },
-                    headStyles: { fillColor: [78, 115, 223] }
-                });
-                y = doc.lastAutoTable.finalY + 16;
-
-                datos.actividades.forEach(function (act, idx) {
-                    if (!act.evidencia_imagen) return;
-                    if (y > 640) { doc.addPage(); y = 40; }
-                    doc.setFontSize(8); doc.setFont(undefined, 'normal');
-                    doc.text('Evidencia (imagen) — actividad ' + (idx + 1) + ':', margenX, y);
-                    y += 8;
-                    try {
-                        doc.addImage(act.evidencia_imagen, formatoImagenDesdeDataUrl(act.evidencia_imagen), margenX, y, 160, 100);
-                    } catch (err) { /* formato de imagen no soportado, se omite */ }
-                    y += 112;
-                });
-
-                if (y > 600) { doc.addPage(); y = 40; }
-                doc.setFontSize(10); doc.setFont(undefined, 'bold');
-                doc.text('Información afiliación a la ARL', margenX, y);
-                doc.autoTable({
-                    startY: y + 6,
-                    margin: { left: margenX, right: margenX },
-                    theme: 'grid',
-                    styles: { fontSize: 8 },
-                    body: [[
-                        'Afiliado: ' + (datos.campos.arl_afiliado || ''),
-                        'Nivel de riesgo: ' + (datos.campos.arl_nivel_riesgo || ''),
-                        'Corresponde: ' + (datos.campos.arl_nivel_corresponde || ''),
-                        'EPP: ' + (datos.campos.arl_epp || '')
-                    ]]
-                });
-                y = doc.lastAutoTable.finalY + 16;
-
-                if (y > 580) { doc.addPage(); y = 40; }
-                doc.setFontSize(10); doc.setFont(undefined, 'bold');
-                doc.text('Firmas', margenX, y);
-                y += 8;
-                doc.setFontSize(8); doc.setFont(undefined, 'normal');
-
-                ['firmaAprendiz', 'firmaInstructor', 'firmaCoformador'].forEach(function (prefijo, i) {
-                    var etiqueta = prefijo === 'firmaAprendiz' ? 'Aprendiz' : (prefijo === 'firmaInstructor' ? 'Instructor' : 'Ente co-formador');
-                    var xPos = margenX + i * 170;
-                    doc.text(etiqueta, xPos, y);
-                    if (datos.firmas[prefijo]) {
-                        try { doc.addImage(datos.firmas[prefijo], formatoImagenDesdeDataUrl(datos.firmas[prefijo]), xPos, y + 4, 150, 60); }
-                        catch (err) { /* noop */ }
-                    } else {
-                        doc.text('(sin firma)', xPos, y + 20);
-                    }
-                });
-            });
-
-            doc.save('bitacoras_' + (datos.campos.aprendiz_num_doc || 'aprendiz') + '.pdf');
+        function barraNegra(texto) {
+            return '<div style="background:#000;color:#fff;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:9px;">' + escapeHtml(texto) + '</div>';
+        }
+        function barraBlanca(texto) {
+            return '<div style="background:#fff;color:#000;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:9px;">' + escapeHtml(texto) + '</div>';
+        }
+        function celdaEtiqueta(texto) {
+            return '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px 3px;">' + escapeHtml(texto) + '</td>';
+        }
+        function celdaValor(texto, alinear) {
+            return '<td style="border:1px solid #000;text-align:' + (alinear || 'left') + ';font-size:8px;padding:3px 4px;">' + escapeHtml(texto || '') + '</td>';
+        }
+        function casilla(marcada) {
+            return '<div style="width:9px;height:9px;border:1px solid #000;margin:0 auto;background:' + (marcada ? '#000' : '#fff') + ';"></div>';
         }
 
-        // ============================================================
-        //  WORD — 1 sección por bitácora, con imágenes incrustadas
-        // ============================================================
+        function construirHtmlBitacora(datos, bit, logoDataUrl) {
+            var c = datos.campos;
+
+            var filasActividades = '';
+            var totalFilas = Math.max(5, datos.actividades.length);
+            for (var i = 0; i < totalFilas; i++) {
+                var act = datos.actividades[i] || {};
+                var evidenciaTexto = act.evidencia_texto || (act.evidencia_imagen ? '(ver imagen adjunta)' : '');
+                filasActividades += '<tr>' +
+                    celdaValor(act.descripcion, 'center') +
+                    celdaValor(act.competencias, 'center') +
+                    celdaValor(act.fecha_inicio, 'center') +
+                    celdaValor(act.fecha_fin, 'center') +
+                    celdaValor(evidenciaTexto, 'center') +
+                    celdaValor(act.observaciones, 'center') +
+                    '</tr>';
+            }
+
+            var mapaAlt = {
+                'Contrato de aprendizaje': 'altContrato',
+                'Monitoria': 'altMonitoria',
+                'Proyecto productivo': 'altProyecto',
+                'Contrato de vínculo formativo': 'altVinculo',
+                'Vínculo laboral': 'altLaboral'
+            };
+            var altMarcada = mapaAlt[datos.alternativa] || '';
+            function xSi(id) { return altMarcada === id ? 'X' : ''; }
+
+            function bloqueFirma(dataUrl) {
+                return dataUrl ? '<img src="' + dataUrl + '" style="max-height:55px;max-width:140px;">' : '&nbsp;';
+            }
+
+            return '' +
+                '<div style="width:780px;padding:14px;font-family:Arial,Helvetica,sans-serif;color:#000;font-size:8px;">' +
+
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' +
+                '<td style="border:1px solid #000;text-align:center;padding:6px;" >' + (logoDataUrl ? '<img src="' + logoDataUrl + '" style="height:40px;">' : '') + '</td>' +
+                '<td style="border:1px solid #000;width:160px;padding:0;">' +
+                '<div style="border-bottom:1px solid #000;padding:3px;font-size:8px;">Código: GFPI-F-147</div>' +
+                '<div style="padding:3px;font-size:8px;">Versión: 05</div>' +
+                '</td>' +
+                '</tr>' +
+                '</table>' +
+
+                barraNegra('PROCESO') +
+                barraBlanca('GESTIÓN DE FORMACIÓN PROFESIONAL INTEGRAL') +
+                barraNegra('NOMBRE DEL FORMATO') +
+                barraBlanca('FORMATO BITÁCORA DE SEGUIMIENTO ETAPA PRODUCTIVA') +
+                barraNegra('CLASIFICACIÓN DE LA INFORMACIÓN') +
+
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Pública</td>' +
+                '<td style="border:1px solid #000;width:26px;">' + casilla(true) + '</td>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Pública Clasificada</td>' +
+                '<td style="border:1px solid #000;width:26px;">' + casilla(false) + '</td>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Pública Reservada</td>' +
+                '<td style="border:1px solid #000;width:26px;">' + casilla(false) + '</td>' +
+                '</tr>' +
+                '</table>' +
+
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' + celdaEtiqueta('Bitácoras N°') + '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;" colspan="2">PERÍODO A REPORTAR</td></tr>' +
+                '<tr>' + celdaValor(bit.numero, 'center') + celdaValor(bit.periodoDesde, 'center') + celdaValor(bit.periodoHasta, 'center') + '</tr>' +
+                '</table>' +
+
+                barraNegra('Datos del aprendiz') +
+                '<table style="width:100%;border-collapse:collapse;">' +
+                '<tr>' + celdaEtiqueta('NOMBRE DEL APRENDIZ') + celdaEtiqueta('TIPO DE DOCUMENTO') + celdaEtiqueta('NUMERO DE IDENTIFICACION') + celdaEtiqueta('TELEFONO') + '</tr>' +
+                '<tr>' + celdaValor(c.aprendiz_nombre, 'center') + celdaValor(c.aprendiz_tipo_doc, 'center') + celdaValor(c.aprendiz_num_doc, 'center') + celdaValor(c.aprendiz_telefono, 'center') + '</tr>' +
+                '<tr>' + celdaEtiqueta('Correo electrónico institucional') + celdaEtiqueta('Correo electrónico personal') + celdaEtiqueta('Direccion Residencial') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
+                '<tr>' + celdaValor(c.aprendiz_correo_institucional, 'center') + celdaValor(c.aprendiz_correo_personal, 'center') + celdaValor(c.aprendiz_direccion, 'center') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
+                '<tr>' + celdaEtiqueta('Numero de Grupo') + celdaEtiqueta('Modalidad') + celdaEtiqueta('Programa de Formacion') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
+                '<tr>' + celdaValor(c.aprendiz_ficha, 'center') + celdaValor(c.aprendiz_modalidad_formacion, 'center') + celdaValor(c.aprendiz_programa, 'center') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
+                '</table>' +
+
+                barraNegra('Datos del ente co-formador') +
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' + celdaEtiqueta('EMPRESA') + celdaEtiqueta('NIT') + celdaEtiqueta('DIRECCION') + '</tr>' +
+                '<tr>' + celdaValor(c.empresa_nombre, 'center') + celdaValor(c.empresa_nit, 'center') + celdaValor(c.empresa_direccion, 'center') + '</tr>' +
+                '</table>' +
+
+                barraNegra('Datos de la persona encargada del proceso formativo del aprendiz en la entidad co-formadora') +
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' + celdaEtiqueta('NOMBRE DEL ENTE COFORMADOR') + celdaEtiqueta('CARGO DEL ENTE COFORMADOR') + celdaEtiqueta('TELEFONO') + celdaEtiqueta('CORREO ELECTRÓNICO') + '</tr>' +
+                '<tr>' + celdaValor(c.coformador_nombre, 'center') + celdaValor(c.coformador_cargo, 'center') + celdaValor(c.coformador_telefono, 'center') + celdaValor(c.coformador_correo, 'center') + '</tr>' +
+                '</table>' +
+
+                barraNegra('Datos del instructor de seguimiento') +
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' + celdaEtiqueta('NOMBRE DE LA PERSONA CON ROL DE INSTRUCTOR DE SEGUIMIENTO:') + celdaEtiqueta('CORREO ELECTRÓNICO:') + '</tr>' +
+                '<tr>' + celdaValor(c.instructor_nombre, 'center') + celdaValor(c.instructor_correo, 'center') + '</tr>' +
+                '</table>' +
+
+                '<div style="border:1px solid #000;padding:3px;font-size:7.5px;margin-bottom:4px;">Seleccione con una "X" el tipo de alternativa de etapa productiva que está realizando, teniendo en cuenta el subtipo al cual pertenece si es el caso:</div>' +
+
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' +
+                '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;">ALTERNATIVA DE ETAPA PRODUCTIVA</td>' +
+                '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;width:60px;">Marque con una X</td>' +
+                '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;">Alternativa de etapa productiva</td>' +
+                '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;width:60px;">Marque con una X</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Contrato de Aprendizaje.</td>' +
+                '<td style="border:1px solid #000;text-align:center;font-weight:bold;">' + xSi('altContrato') + '</td>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Monitoria.</td>' +
+                '<td style="border:1px solid #000;text-align:center;font-weight:bold;">' + xSi('altMonitoria') + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;" rowspan="2">Vínculo Formativo.</td>' +
+                '<td style="border:1px solid #000;text-align:center;font-weight:bold;" rowspan="2">' + xSi('altVinculo') + '</td>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Proyecto productivo.</td>' +
+                '<td style="border:1px solid #000;text-align:center;font-weight:bold;">' + xSi('altProyecto') + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Vínculo laboral.</td>' +
+                '<td style="border:1px solid #000;text-align:center;font-weight:bold;">' + xSi('altLaboral') + '</td>' +
+                '</tr>' +
+                '</table>' +
+
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' +
+                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">DESCRIPCIÓN DE LA ACTIVIDAD</td>' +
+                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">Competencias del programa de formación aplicadas en el desarrollo de la actividad</td>' +
+                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">FECHA DE INICIO</td>' +
+                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">FECHA DE FIN</td>' +
+                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">EVIDENCIA DE CUMPLIMIENTO</td>' +
+                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">OBSERVACIONES, INASISTENCIAS, DIFICULTADES PRESENTADAS</td>' +
+                '</tr>' +
+                filasActividades +
+                '</table>' +
+
+                '<div style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;">' + escapeHtml(TEXTO_DECRETO) + '</div>' +
+                '<div style="border:1px solid #000;font-size:7.5px;padding:2px;">' + escapeHtml(TEXTO_ESPACIO_OBLIGATORIO) + '</div>' +
+                '<div style="border:1px solid #000;font-size:7px;padding:3px;margin-bottom:4px;">' +
+                escapeHtml(TEXTO_ARTICULO_11) + '<br>' + escapeHtml(TEXTO_OBLIGACION_1) + '<br>' + escapeHtml(TEXTO_OBLIGACION_2) +
+                '</div>' +
+
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">' +
+                '<tr>' +
+                celdaEtiqueta('¿La persona con rol de aprendiz se encuentra afiliado a la ARL?') +
+                celdaEtiqueta('Indique el nivel de riesgo actual') +
+                celdaEtiqueta('¿El nivel de riesgo de la ARL corresponde a las actividades que desarrolla la persona con rol de aprendiz en la empresa?') +
+                celdaEtiqueta('¿La persona con rol de aprendiz cuenta con los elementos de protección personal (EPP), requeridos para desarrollar su etapa productiva?') +
+                '</tr>' +
+                '<tr>' + celdaValor(c.arl_afiliado, 'center') + celdaValor(c.arl_nivel_riesgo, 'center') + celdaValor(c.arl_nivel_corresponde, 'center') + celdaValor(c.arl_epp, 'center') + '</tr>' +
+                '</table>' +
+
+                '<table style="width:100%;border-collapse:collapse;">' +
+                '<tr>' +
+                '<td style="border:0;text-align:center;padding:6px 6px 0 6px;height:55px;width:50%;vertical-align:bottom;">' + bloqueFirma(datos.firmas.firmaAprendiz) + '</td>' +
+                '<td style="border:0;text-align:center;padding:6px 6px 0 6px;vertical-align:bottom;">' + escapeHtml(c.fecha_entrega || '') + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td style="border:0;border-top:1px solid #000;text-align:center;font-size:7.5px;padding:2px;">Firma de la persona con rol de aprendiz</td>' +
+                '<td style="border:0;border-top:1px solid #000;text-align:center;font-size:7.5px;padding:2px;">Fecha entrega bitácora</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td style="border:0;text-align:center;padding:16px 6px 0 6px;height:55px;vertical-align:bottom;">' + bloqueFirma(datos.firmas.firmaInstructor) + '</td>' +
+                '<td style="border:0;text-align:center;padding:16px 6px 0 6px;vertical-align:bottom;">' + bloqueFirma(datos.firmas.firmaCoformador) + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td style="border:0;border-top:1px solid #000;text-align:center;font-size:7.5px;padding:2px;">Firma del instructor de seguimiento</td>' +
+                '<td style="border:0;border-top:1px solid #000;text-align:center;font-size:7.5px;padding:2px;">Firma de la persona con rol de jefe inmediato</td>' +
+                '</tr>' +
+                '</table>' +
+
+                '</div>';
+        }
+
+        // Nombre de archivo: Ficha - Cédula - Nombre completo - BIT
+        function construirNombreArchivo(datos) {
+            var partes = [
+                datos.campos.aprendiz_ficha || 'sinficha',
+                datos.campos.aprendiz_num_doc || 'sincedula',
+                datos.campos.aprendiz_nombre || 'sinnombre',
+                'BIT'
+            ];
+            var nombre = partes.join(' - ');
+            return nombre.replace(/[\\/:*?"<>|]/g, '-');
+        }
+
+        function generarPDF(datos) {
+            function continuarConLogo(dataUrlLogo) {
+                var contenedor = document.createElement('div');
+                contenedor.style.position = 'fixed';
+                contenedor.style.left = '-99999px';
+                contenedor.style.top = '0';
+                contenedor.style.background = '#fff';
+                document.body.appendChild(contenedor);
+
+                var doc = new jspdf.jsPDF({ unit: 'pt', format: 'letter' });
+                var pageWidth = doc.internal.pageSize.getWidth();
+                var pageHeight = doc.internal.pageSize.getHeight();
+
+                var indice = 0;
+                function procesarSiguiente() {
+                    if (indice >= datos.bitacoras.length) {
+                        document.body.removeChild(contenedor);
+                        doc.save(construirNombreArchivo(datos) + '.pdf');
+                        return;
+                    }
+                    var bit = datos.bitacoras[indice];
+                    contenedor.innerHTML = construirHtmlBitacora(datos, bit, dataUrlLogo);
+
+                    html2canvas(contenedor, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(function (canvas) {
+                        var imgData = canvas.toDataURL('image/jpeg', 0.92);
+                        var alturaEnPdf = pageWidth * (canvas.height / canvas.width);
+                        if (indice > 0) doc.addPage();
+                        if (alturaEnPdf <= pageHeight) {
+                            doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, alturaEnPdf);
+                        } else {
+                            var anchoAjustado = pageHeight * (canvas.width / canvas.height);
+                            doc.addImage(imgData, 'JPEG', 0, 0, anchoAjustado, pageHeight);
+                        }
+                        indice++;
+                        procesarSiguiente();
+                    }).catch(function (err) {
+                        document.body.removeChild(contenedor);
+                        console.error('Error generando el PDF:', err);
+                        alert('No se pudo generar el PDF: ' + err.message);
+                    });
+                }
+                procesarSiguiente();
+            }
+
+            fetch('img/logo_SENA.png').then(function (r) {
+                if (!r.ok) throw new Error('no encontrado');
+                return r.blob();
+            }).then(function (blob) {
+                var reader = new FileReader();
+                reader.onload = function () { continuarConLogo(reader.result); };
+                reader.onerror = function () { continuarConLogo(null); };
+                reader.readAsDataURL(blob);
+            }).catch(function () { continuarConLogo(null); });
+        }
+
         function generarWord(datos) {
             if (typeof window.docx === 'undefined') {
                 alert('No se pudo cargar la librería para generar Word (docx.js). Revisa tu conexión a internet y la consola del navegador (F12) para más detalles.');
@@ -1419,7 +1574,7 @@
                 var documento = new Docx.Document({ sections: secciones });
 
                 Docx.Packer.toBlob(documento).then(function (blob) {
-                    descargarBlob(blob, 'bitacoras_' + (datos.campos.aprendiz_num_doc || 'aprendiz') + '.docx');
+                    descargarBlob(blob, construirNombreArchivo(datos) + '.docx');
                 }).catch(function (err) {
                     console.error('Error empaquetando el Word:', err);
                     alert('No se pudo generar el archivo Word: ' + err.message);
