@@ -551,6 +551,39 @@
         <i class="fas fa-angle-up"></i>
     </a>
 
+    <!-- Modal de aviso (reemplaza alert(), para no mostrar la IP/origen del navegador) -->
+    <div class="modal fade no-print" id="avisoModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="avisoModalTitulo">Bitácora Etapa Productiva</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body" id="avisoModalCuerpo" style="white-space:pre-line;"></div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" data-dismiss="modal">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación (reemplaza confirm()) -->
+    <div class="modal fade no-print" id="confirmarModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Bitácora Etapa Productiva</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body" id="confirmarModalCuerpo"></div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-danger" type="button" id="confirmarModalBotonAceptar">Sí, continuar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap core JavaScript-->
     <script src="vendor/jquery/jquery.min.js"></script>
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
@@ -668,6 +701,27 @@
             var div = document.createElement('div');
             div.textContent = texto == null ? '' : texto;
             return div.innerHTML;
+        }
+
+        // Reemplazan alert()/confirm(): los diálogos nativos del navegador muestran
+        // siempre el origen de la página (ej. "127.0.0.1:5500 dice") por seguridad,
+        // y eso no se puede cambiar. Con un modal propio controlamos el título/estilo.
+        function mostrarAviso(mensaje, titulo) {
+            document.getElementById('avisoModalTitulo').textContent = titulo || 'Bitácora Etapa Productiva';
+            document.getElementById('avisoModalCuerpo').textContent = mensaje;
+            $('#avisoModal').modal('show');
+        }
+
+        function pedirConfirmacion(mensaje, alConfirmar) {
+            document.getElementById('confirmarModalCuerpo').textContent = mensaje;
+            var boton = document.getElementById('confirmarModalBotonAceptar');
+            var nuevoBoton = boton.cloneNode(true); // limpia listeners anteriores
+            boton.parentNode.replaceChild(nuevoBoton, boton);
+            nuevoBoton.addEventListener('click', function () {
+                $('#confirmarModal').modal('hide');
+                alConfirmar();
+            });
+            $('#confirmarModal').modal('show');
         }
 
         // Lee del DOM los campos comunes (todo excepto actividades/alternativa/firmas) hacia ESTADO
@@ -803,7 +857,7 @@
             bloque.querySelector('.btnRemoveActividad').addEventListener('click', function () {
                 var total = document.querySelectorAll('#contenedorActividades .actividad-bloque').length;
                 if (total <= MIN_ACTIVIDADES) {
-                    alert('Debe mantener al menos ' + MIN_ACTIVIDADES + ' actividades registradas.');
+                    mostrarAviso('Debe mantener al menos ' + MIN_ACTIVIDADES + ' actividades registradas.');
                     return;
                 }
                 bloque.remove();
@@ -1197,8 +1251,8 @@
                 })
                 .catch(function (err) {
                     console.error('Error generando Excel:', err);
-                    alert('No se pudo generar el Excel con la plantilla oficial.\n\n' + err.message +
-                        '\n\nVerifica que el archivo esté en la carpeta "plantilla/" de tu proyecto y que estés corriendo el sitio con un servidor local (Live Server), no abriendo el HTML directo.');
+                    mostrarAviso('No se pudo generar el Excel con la plantilla oficial.\n\n' + err.message +
+                        '\n\nVerifica que el archivo esté en la carpeta "plantilla/" de tu proyecto y que estés corriendo el sitio con un servidor local (Live Server), no abriendo el HTML directo.', 'Error al generar el Excel');
                 });
         }
 
@@ -1454,7 +1508,7 @@
                     }).catch(function (err) {
                         document.body.removeChild(contenedor);
                         console.error('Error generando el PDF:', err);
-                        alert('No se pudo generar el PDF: ' + err.message);
+                        mostrarAviso('No se pudo generar el PDF: ' + err.message, 'Error al generar el PDF');
                     });
                 }
                 procesarSiguiente();
@@ -1495,14 +1549,14 @@
             var errores = validarActividades();
             if (errores.length > 0) { mostrarErrores(errores); return; }
             guardarEstado();
-            alert('Formulario válido. Usa el botón "Descargar formato" para generar las 12 bitácoras en PDF o Excel.');
+            mostrarAviso('Formulario válido. Usa el botón "Descargar formato" para generar las 12 bitácoras en PDF o Excel.', 'Formulario válido');
         });
 
         document.getElementById('btnLimpiarFormulario').addEventListener('click', function () {
-            if (confirm('¿Seguro que quieres borrar toda la información ingresada en el formulario?')) {
+            pedirConfirmacion('¿Seguro que quieres borrar toda la información ingresada en el formulario?', function () {
                 limpiarEstadoGuardado();
                 location.reload();
-            }
+            });
         });
 
         // ============================================================
