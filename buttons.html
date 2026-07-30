@@ -206,8 +206,8 @@
                                         <input type="tel" class="form-control solo-numero" name="aprendiz_telefono" inputmode="numeric" pattern="[0-9]*" required>
                                     </div>
                                     <div class="form-group col-md-4">
-                                        <label class="bitacora-required">Correo electrónico institucional</label>
-                                        <input type="email" class="form-control" name="aprendiz_correo_institucional" required>
+                                        <label>Correo electrónico institucional (opcional)</label>
+                                        <input type="email" class="form-control" name="aprendiz_correo_institucional">
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label class="bitacora-required">Correo electrónico personal</label>
@@ -244,8 +244,9 @@
                                         <label class="bitacora-required">Modalidad de ejecución de la etapa productiva</label>
                                         <select class="form-control" name="modalidad_ejecucion" required>
                                             <option value="">Seleccione...</option>
-                                            <option value="Presencial">Presencial</option>
-                                            <option value="Virtual">Virtual</option>
+                                            <option value="Mixta">Mixta</option>
+                                            <option value="Diurna">Diurna</option>
+                                            <option value="Nocturna">Nocturna</option>
                                         </select>
                                     </div>
                                     <div class="form-group col-md-4">
@@ -369,72 +370,22 @@
                             </div>
                         </div>
 
-                        <!-- Descripción de actividades (aplica igual a las 12 bitácoras) -->
+                        <!-- Descripción de actividades, evidencias y observaciones -->
+                        <!-- IMPORTANTE: esto se llena UNA SOLA VEZ y es igual para las 12 bitácoras. -->
                         <div class="card shadow mb-4">
                             <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                                <h6 class="m-0 font-weight-bold text-primary">Descripción de actividades y competencias (igual en las 12 bitácoras)</h6>
+                                <h6 class="m-0 font-weight-bold text-primary">Actividades, evidencias y observaciones (una sola vez, igual en las 12 bitácoras)</h6>
                                 <button type="button" class="btn btn-sm btn-success no-print" id="btnAddActividad">
-                                    <i class="fas fa-plus"></i> Agregar fila
+                                    <i class="fas fa-plus"></i> Agregar actividad
                                 </button>
-                            </div>
-                            <div class="card-body table-responsive">
-                                <p class="text-muted small">
-                                    Mínimo 3 actividades, cada una con descripción y competencias diferentes entre sí. Esta información se llena
-                                    <strong>una sola vez</strong> y prevalece igual en las 12 bitácoras — no hay que repetirla en cada una.
-                                    Las columnas con <span class="text-danger">*</span> son obligatorias.
-                                </p>
-                                <table class="table table-bordered" id="tablaActividades">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th style="min-width:260px">Descripción de la actividad <span class="text-danger">*</span></th>
-                                            <th style="min-width:260px">Competencias del programa aplicadas <span class="text-danger">*</span></th>
-                                            <th class="no-print"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr class="actividad-row">
-                                            <td><textarea class="form-control" name="actividad_descripcion[]" rows="2" required></textarea></td>
-                                            <td><textarea class="form-control" name="actividad_competencias[]" rows="2" required></textarea></td>
-                                            <td class="no-print text-center align-middle">
-                                                <button type="button" class="btn btn-sm btn-danger btnRemoveActividad"><i class="fas fa-trash"></i></button>
-                                            </td>
-                                        </tr>
-                                        <tr class="actividad-row">
-                                            <td><textarea class="form-control" name="actividad_descripcion[]" rows="2" required></textarea></td>
-                                            <td><textarea class="form-control" name="actividad_competencias[]" rows="2" required></textarea></td>
-                                            <td class="no-print text-center align-middle">
-                                                <button type="button" class="btn btn-sm btn-danger btnRemoveActividad"><i class="fas fa-trash"></i></button>
-                                            </td>
-                                        </tr>
-                                        <tr class="actividad-row">
-                                            <td><textarea class="form-control" name="actividad_descripcion[]" rows="2" required></textarea></td>
-                                            <td><textarea class="form-control" name="actividad_competencias[]" rows="2" required></textarea></td>
-                                            <td class="no-print text-center align-middle">
-                                                <button type="button" class="btn btn-sm btn-danger btnRemoveActividad"><i class="fas fa-trash"></i></button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- Evidencias y observaciones: esto SÍ cambia de una bitácora a otra -->
-                        <div class="card shadow mb-4">
-                            <div class="card-header py-3">
-                                <h6 class="m-0 font-weight-bold text-primary" id="tituloEvidencias">
-                                    Evidencias y observaciones — Bitácora N° <span id="numeroBitacoraEvidencias">-</span>
-                                </h6>
                             </div>
                             <div class="card-body">
                                 <p class="text-muted small">
-                                    A diferencia de la descripción/competencias, esta información <strong>sí es distinta en cada una de las 12 bitácoras</strong>:
-                                    las fechas deben caer dentro del período de esta bitácora, y la evidencia puede ser texto, una imagen, o ambos.
-                                    Las observaciones son opcionales. Si cambias el número de bitácora arriba, lo que veas aquí se guarda y se actualiza según corresponda a esa bitácora.
+                                    Mínimo 3 actividades, cada una con descripción y competencias diferentes entre sí (no se pueden repetir).
+                                    Todo esto se llena <strong>una sola vez</strong> y aplica igual a las 12 bitácoras — no hay que repetirlo.
+                                    La evidencia puede ser texto, imagen, o ambas (se exige al menos una de las dos). Las observaciones son opcionales.
                                 </p>
-                                <div id="alertaSinBitacora" class="alert alert-info d-none">
-                                    Selecciona primero la fecha de inicio de la etapa y el número de bitácora en el "Encabezado" para habilitar esta sección.
-                                </div>
-                                <div id="contenedorEvidencias"></div>
+                                <div id="contenedorActividades"></div>
                             </div>
                         </div>
 
@@ -560,7 +511,6 @@
                                         <i class="fas fa-download"></i> Descargar formato
                                     </button>
                                     <div class="dropdown-menu" aria-labelledby="dropdownDescargar">
-                                        <a class="dropdown-item" href="#" id="btnDescargarWord"><i class="fas fa-file-word mr-2"></i>Word (.docx)</a>
                                         <a class="dropdown-item" href="#" id="btnDescargarPDF"><i class="fas fa-file-pdf mr-2"></i>PDF</a>
                                         <a class="dropdown-item" href="#" id="btnDescargarExcel"><i class="fas fa-file-excel mr-2"></i>Excel (.xlsx)</a>
                                     </div>
@@ -607,18 +557,21 @@
     <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
     <script src="js/sb-admin-2.min.js"></script>
 
-    <!-- Librerías para generar los documentos reales (Excel, PDF, Word) -->
+    <!-- Librerías para generar los documentos reales (Excel, PDF) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
     <script>
         // ============================================================
         //  Cálculo automático del período (15 días por bitácora, máx. 12 = 6 meses)
+        //  Esto sigue existiendo solo como VISTA PREVIA informativa de cada bitácora
+        //  en el Encabezado; ya no controla qué datos se muestran más abajo.
         // ============================================================
         var DIAS_POR_BITACORA = 15;
         var MAX_BITACORAS = 12;
+        var MIN_ACTIVIDADES = 3;
 
         function formatFechaInput(d) {
             var y = d.getUTCFullYear();
@@ -636,19 +589,13 @@
             return new Date(Date.UTC(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10)));
         }
 
-        // Calcula {desde, hasta} (strings yyyy-mm-dd) para cualquier bitácora N, sin tocar el DOM.
-        // La usan tanto calcularPeriodo() (para lo que se ve en pantalla) como el generador de
-        // documentos (para calcular el período de las 12 bitácoras de una sola vez).
         function periodoParaNumero(fechaInicioStr, numero) {
             if (!fechaInicioStr || !numero) return null;
             var inicioEtapa = parseFechaInput(fechaInicioStr);
-
             var desde = new Date(inicioEtapa);
             desde.setUTCDate(desde.getUTCDate() + (numero - 1) * DIAS_POR_BITACORA);
-
             var hasta = new Date(desde);
             hasta.setUTCDate(hasta.getUTCDate() + DIAS_POR_BITACORA - 1);
-
             return { desde: formatFechaInput(desde), hasta: formatFechaInput(hasta) };
         }
 
@@ -681,18 +628,19 @@
             }
         }
 
+        document.getElementById('fechaInicioEtapa').addEventListener('change', calcularPeriodo);
+        document.getElementById('bitacoraNumero').addEventListener('change', calcularPeriodo);
+
         // ============================================================
-        //  Modelo de datos:
-        //  - ESTADO.campos       -> datos personales/empresa/instructor/etc. (una sola vez, prevalecen)
-        //  - ESTADO.alternativa  -> alternativa de etapa productiva (una sola vez, prevalece)
-        //  - ESTADO.actividades  -> [{descripcion, competencias}] plantilla (una sola vez, prevalece)
-        //  - ESTADO.firmas       -> firmas en base64 (una sola vez, prevalecen)
-        //  - ESTADO.porBitacora  -> { "1": [{fecha_inicio, fecha_fin, evidencia_texto, evidencia_imagen, observaciones}], "2": [...], ... }
-        //                          esto SÍ cambia entre bitácoras.
+        //  Modelo de datos (todo se llena UNA SOLA VEZ y aplica a las 12 bitácoras):
+        //  - ESTADO.campos       -> datos personales/empresa/instructor/ARL/etc.
+        //  - ESTADO.alternativa  -> alternativa de etapa productiva
+        //  - ESTADO.actividades  -> [{descripcion, competencias, fecha_inicio, fecha_fin,
+        //                             evidencia_texto, evidencia_imagen, observaciones}]
+        //  - ESTADO.firmas       -> firmas en base64
         // ============================================================
         var FORM_STATE_KEY = 'bitacoraFormState';
-        var ESTADO = { campos: {}, alternativa: '', actividades: [], firmas: {}, porBitacora: {} };
-        var numeroActual = '';
+        var ESTADO = { campos: {}, alternativa: '', actividades: [], firmas: {} };
 
         function cargarEstadoDesdeStorage() {
             var raw;
@@ -704,194 +652,16 @@
                 ESTADO.alternativa = guardado.alternativa || '';
                 ESTADO.actividades = guardado.actividades || [];
                 ESTADO.firmas = guardado.firmas || {};
-                ESTADO.porBitacora = guardado.porBitacora || {};
             } catch (e) { /* estado corrupto, se ignora */ }
         }
 
         function persistirEstado() {
-            try {
-                sessionStorage.setItem(FORM_STATE_KEY, JSON.stringify(ESTADO));
-            } catch (e) {
-                console.warn('No se pudo guardar el progreso del formulario:', e);
-            }
-        }
-
-        // Lee del DOM los campos "que prevalecen" (una sola vez) y los guarda en ESTADO
-        function leerCamposComunes() {
-            var form = document.getElementById('formBitacora');
-
-            ESTADO.campos = {};
-            Array.prototype.forEach.call(form.elements, function (el) {
-                if (!el.name) return;
-                if (el.name.indexOf('[]') !== -1) return;      // actividades (plantilla), aparte
-                if (el.name === 'alternativa') return;          // aparte
-                if (el.type === 'file') return;                 // firmas, aparte
-                if (el.name.indexOf('evid_') === 0) return;      // evidencias por bitácora, aparte
-                ESTADO.campos[el.name] = el.value;
-            });
-
-            var radioSel = form.querySelector('input[name="alternativa"]:checked');
-            ESTADO.alternativa = radioSel ? radioSel.value : '';
-
-            ESTADO.actividades = [];
-            document.querySelectorAll('#tablaActividades tbody tr').forEach(function (fila) {
-                ESTADO.actividades.push({
-                    descripcion: fila.querySelector('[name="actividad_descripcion[]"]').value,
-                    competencias: fila.querySelector('[name="actividad_competencias[]"]').value
-                });
-            });
-
-            ['firmaAprendiz', 'firmaInstructor', 'firmaCoformador'].forEach(function (prefijo) {
-                var preview = document.getElementById(prefijo + 'Preview');
-                ESTADO.firmas[prefijo] = (preview && preview.src && preview.src.indexOf('data:') === 0) ? preview.src : (ESTADO.firmas[prefijo] || null);
-            });
-        }
-
-        // Lee del DOM las evidencias de la bitácora actualmente visible y las guarda en ESTADO.porBitacora[numero]
-        function leerEvidenciasActuales(numero) {
-            if (!numero) return;
-            var contenedor = document.getElementById('contenedorEvidencias');
-            var bloques = contenedor.querySelectorAll('.evidencia-bloque');
-            if (bloques.length === 0) return;
-
-            var lista = [];
-            bloques.forEach(function (bloque) {
-                var idx = bloque.getAttribute('data-index');
-                var imgPreview = bloque.querySelector('.evid-imagen-preview');
-                lista.push({
-                    fecha_inicio: bloque.querySelector('.evid-fecha-inicio').value,
-                    fecha_fin: bloque.querySelector('.evid-fecha-fin').value,
-                    evidencia_texto: bloque.querySelector('.evid-texto').value,
-                    evidencia_imagen: (imgPreview && imgPreview.src && imgPreview.src.indexOf('data:') === 0) ? imgPreview.src : null,
-                    observaciones: bloque.querySelector('.evid-observaciones').value
-                });
-            });
-            ESTADO.porBitacora[numero] = lista;
-        }
-
-        // Guarda TODO (campos comunes + evidencias de la bitácora visible) y persiste en sessionStorage
-        function guardarEstado() {
-            leerCamposComunes();
-            leerEvidenciasActuales(numeroActual);
-            persistirEstado();
+            try { sessionStorage.setItem(FORM_STATE_KEY, JSON.stringify(ESTADO)); }
+            catch (e) { console.warn('No se pudo guardar el progreso del formulario:', e); }
         }
 
         function limpiarEstadoGuardado() {
             try { sessionStorage.removeItem(FORM_STATE_KEY); } catch (e) { /* noop */ }
-        }
-
-        // ============================================================
-        //  Construir/actualizar la sección de evidencias para la bitácora N° indicada
-        // ============================================================
-        function contarActividadesPlantilla() {
-            return document.querySelectorAll('#tablaActividades tbody tr').length;
-        }
-
-        function renderizarEvidencias(numero) {
-            var contenedor = document.getElementById('contenedorEvidencias');
-            var alerta = document.getElementById('alertaSinBitacora');
-            var tituloNumero = document.getElementById('numeroBitacoraEvidencias');
-            var periodoDesde = document.getElementById('periodoDesde').value;
-            var periodoHasta = document.getElementById('periodoHasta').value;
-
-            if (!numero || !periodoDesde || !periodoHasta) {
-                contenedor.innerHTML = '';
-                alerta.classList.remove('d-none');
-                tituloNumero.textContent = '-';
-                return;
-            }
-            alerta.classList.add('d-none');
-            tituloNumero.textContent = numero;
-
-            var totalActividades = contarActividadesPlantilla();
-            var descripciones = Array.from(document.querySelectorAll('[name="actividad_descripcion[]"]')).map(function (el) { return el.value; });
-            var guardadas = ESTADO.porBitacora[numero] || [];
-
-            var html = '';
-            for (var i = 0; i < totalActividades; i++) {
-                var datos = guardadas[i] || {};
-                var fechaInicio = datos.fecha_inicio || periodoDesde;
-                var fechaFin = datos.fecha_fin || periodoHasta;
-                var textoEvidencia = datos.evidencia_texto || '';
-                var imagenEvidencia = datos.evidencia_imagen || null;
-                var observaciones = datos.observaciones || '';
-                var descripcionCorta = (descripciones[i] || '(actividad ' + (i + 1) + ' sin descripción todavía)').substring(0, 140);
-
-                html += '' +
-                    '<div class="evidencia-bloque border rounded p-3 mb-3" data-index="' + i + '">' +
-                    '  <div class="font-weight-bold text-gray-700 mb-2">Actividad ' + (i + 1) + ': <span class="font-weight-normal">' + escapeHtml(descripcionCorta) + '</span></div>' +
-                    '  <div class="row">' +
-                    '    <div class="form-group col-md-3">' +
-                    '      <label class="bitacora-required">Fecha de inicio</label>' +
-                    '      <input type="date" class="form-control evid-fecha-inicio" value="' + fechaInicio + '" required>' +
-                    '    </div>' +
-                    '    <div class="form-group col-md-3">' +
-                    '      <label class="bitacora-required">Fecha de fin</label>' +
-                    '      <input type="date" class="form-control evid-fecha-fin" value="' + fechaFin + '" required>' +
-                    '    </div>' +
-                    '    <div class="form-group col-md-6">' +
-                    '      <label>Observaciones / inasistencias / dificultades (opcional)</label>' +
-                    '      <textarea class="form-control evid-observaciones" rows="2">' + escapeHtml(observaciones) + '</textarea>' +
-                    '    </div>' +
-                    '  </div>' +
-                    '  <div class="row">' +
-                    '    <div class="form-group col-md-6">' +
-                    '      <label class="bitacora-required">Evidencia de cumplimiento (texto)</label>' +
-                    '      <textarea class="form-control evid-texto" rows="2" placeholder="Describe la evidencia (opcional si subes una imagen)">' + escapeHtml(textoEvidencia) + '</textarea>' +
-                    '    </div>' +
-                    '    <div class="form-group col-md-6">' +
-                    '      <label>Evidencia de cumplimiento (imagen, opcional si escribiste texto)</label>' +
-                    '      <div class="custom-file">' +
-                    '        <input type="file" class="custom-file-input evid-imagen-input" accept="image/*">' +
-                    '        <label class="custom-file-label">Seleccionar imagen...</label>' +
-                    '      </div>' +
-                    '      <div class="mt-2" style="display:' + (imagenEvidencia ? 'block' : 'none') + ';">' +
-                    '        <img class="evid-imagen-preview img-thumbnail" style="max-height:90px;" src="' + (imagenEvidencia || '') + '">' +
-                    '        <button type="button" class="btn btn-sm btn-outline-danger ml-2 no-print btn-quitar-evid-imagen"><i class="fas fa-times"></i> Quitar</button>' +
-                    '      </div>' +
-                    '    </div>' +
-                    '  </div>' +
-                    '</div>';
-            }
-            contenedor.innerHTML = html;
-
-            // Cablear los inputs de imagen recién creados (no llevan atributo name, por eso no
-            // los recoge el listener genérico de "input"/"change" del formulario en el momento justo).
-            contenedor.querySelectorAll('.evid-imagen-input').forEach(function (input) {
-                input.addEventListener('change', function () {
-                    var file = input.files && input.files[0];
-                    if (!file) return;
-                    var bloque = input.closest('.evidencia-bloque');
-                    var wrapper = bloque.querySelector('.mt-2');
-                    var preview = bloque.querySelector('.evid-imagen-preview');
-                    var fileLabel = input.nextElementSibling;
-                    if (fileLabel) fileLabel.textContent = file.name;
-
-                    var reader = new FileReader();
-                    reader.onload = function (e) {
-                        preview.src = e.target.result;
-                        wrapper.style.display = 'block';
-                        guardarEstado();
-                    };
-                    reader.readAsDataURL(file);
-                });
-            });
-
-            contenedor.querySelectorAll('.btn-quitar-evid-imagen').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    var bloque = btn.closest('.evidencia-bloque');
-                    var input = bloque.querySelector('.evid-imagen-input');
-                    var preview = bloque.querySelector('.evid-imagen-preview');
-                    var wrapper = btn.closest('.mt-2');
-                    var fileLabel = input.nextElementSibling;
-
-                    input.value = '';
-                    preview.src = '';
-                    wrapper.style.display = 'none';
-                    if (fileLabel) fileLabel.textContent = 'Seleccionar imagen...';
-                    guardarEstado();
-                });
-            });
         }
 
         function escapeHtml(texto) {
@@ -900,47 +670,194 @@
             return div.innerHTML;
         }
 
-        // Al cambiar de bitácora: primero se guarda lo que estaba visible de la bitácora anterior,
-        // luego se recalcula el período, y luego se dibuja la sección de evidencias para la nueva.
-        document.getElementById('bitacoraNumero').addEventListener('change', function () {
-            if (numeroActual) {
-                leerEvidenciasActuales(numeroActual);
-                persistirEstado();
+        // Lee del DOM los campos comunes (todo excepto actividades/alternativa/firmas) hacia ESTADO
+        function leerCamposComunes() {
+            var form = document.getElementById('formBitacora');
+            ESTADO.campos = {};
+            Array.prototype.forEach.call(form.elements, function (el) {
+                if (!el.name) return;
+                if (el.name.indexOf('[]') !== -1) return;
+                if (el.name === 'alternativa') return;
+                if (el.type === 'file') return;
+                if (el.name.indexOf('act_') === 0) return;
+                ESTADO.campos[el.name] = el.value;
+            });
+
+            var radioSel = form.querySelector('input[name="alternativa"]:checked');
+            ESTADO.alternativa = radioSel ? radioSel.value : '';
+
+            ['firmaAprendiz', 'firmaInstructor', 'firmaCoformador'].forEach(function (prefijo) {
+                var preview = document.getElementById(prefijo + 'Preview');
+                ESTADO.firmas[prefijo] = (preview && preview.src && preview.src.indexOf('data:') === 0) ? preview.src : (ESTADO.firmas[prefijo] || null);
+            });
+        }
+
+        // Lee del DOM la lista de actividades (con sus evidencias) hacia ESTADO.actividades
+        function leerActividades() {
+            var bloques = document.querySelectorAll('#contenedorActividades .actividad-bloque');
+            var lista = [];
+            bloques.forEach(function (bloque) {
+                var imgPreview = bloque.querySelector('.act-evidencia-imagen-preview');
+                lista.push({
+                    descripcion: bloque.querySelector('.act-descripcion').value,
+                    competencias: bloque.querySelector('.act-competencias').value,
+                    fecha_inicio: bloque.querySelector('.act-fecha-inicio').value,
+                    fecha_fin: bloque.querySelector('.act-fecha-fin').value,
+                    evidencia_texto: bloque.querySelector('.act-evidencia-texto').value,
+                    evidencia_imagen: (imgPreview && imgPreview.src && imgPreview.src.indexOf('data:') === 0) ? imgPreview.src : null,
+                    observaciones: bloque.querySelector('.act-observaciones').value
+                });
+            });
+            ESTADO.actividades = lista;
+        }
+
+        function guardarEstado() {
+            leerCamposComunes();
+            leerActividades();
+            persistirEstado();
+        }
+
+        // ============================================================
+        //  Construcción de los bloques de actividades en el DOM
+        // ============================================================
+        function construirBloqueActividadHTML(indice, datos) {
+            datos = datos || {};
+            var tieneImagen = !!datos.evidencia_imagen;
+            return '' +
+                '<div class="actividad-bloque border rounded p-3 mb-3" data-index="' + indice + '">' +
+                '  <div class="d-flex justify-content-between align-items-center mb-2">' +
+                '    <strong>Actividad ' + (indice + 1) + '</strong>' +
+                '    <button type="button" class="btn btn-sm btn-danger btnRemoveActividad no-print"><i class="fas fa-trash"></i></button>' +
+                '  </div>' +
+                '  <div class="row">' +
+                '    <div class="form-group col-md-6">' +
+                '      <label class="bitacora-required">Descripción de la actividad</label>' +
+                '      <textarea class="form-control act-descripcion" rows="2" required>' + escapeHtml(datos.descripcion) + '</textarea>' +
+                '    </div>' +
+                '    <div class="form-group col-md-6">' +
+                '      <label class="bitacora-required">Competencias del programa aplicadas</label>' +
+                '      <textarea class="form-control act-competencias" rows="2" required>' + escapeHtml(datos.competencias) + '</textarea>' +
+                '    </div>' +
+                '  </div>' +
+                '  <div class="row">' +
+                '    <div class="form-group col-md-3">' +
+                '      <label class="bitacora-required">Fecha de inicio</label>' +
+                '      <input type="date" class="form-control act-fecha-inicio" value="' + (datos.fecha_inicio || '') + '" required>' +
+                '    </div>' +
+                '    <div class="form-group col-md-3">' +
+                '      <label class="bitacora-required">Fecha de fin</label>' +
+                '      <input type="date" class="form-control act-fecha-fin" value="' + (datos.fecha_fin || '') + '" required>' +
+                '    </div>' +
+                '    <div class="form-group col-md-6">' +
+                '      <label>Observaciones / inasistencias / dificultades (opcional)</label>' +
+                '      <textarea class="form-control act-observaciones" rows="2">' + escapeHtml(datos.observaciones) + '</textarea>' +
+                '    </div>' +
+                '  </div>' +
+                '  <div class="row">' +
+                '    <div class="form-group col-md-6">' +
+                '      <label class="bitacora-required">Evidencia de cumplimiento (texto)</label>' +
+                '      <textarea class="form-control act-evidencia-texto" rows="2" placeholder="Obligatorio si no subes una imagen">' + escapeHtml(datos.evidencia_texto) + '</textarea>' +
+                '    </div>' +
+                '    <div class="form-group col-md-6">' +
+                '      <label>Evidencia de cumplimiento (imagen, opcional si escribiste texto)</label>' +
+                '      <div class="custom-file">' +
+                '        <input type="file" class="custom-file-input act-evidencia-imagen-input" accept="image/*">' +
+                '        <label class="custom-file-label">' + (tieneImagen ? 'Imagen cargada previamente' : 'Seleccionar imagen...') + '</label>' +
+                '      </div>' +
+                '      <div class="mt-2 act-evidencia-imagen-wrapper" style="display:' + (tieneImagen ? 'block' : 'none') + ';">' +
+                '        <img class="img-thumbnail act-evidencia-imagen-preview" style="max-height:90px;" src="' + (datos.evidencia_imagen || '') + '">' +
+                '        <button type="button" class="btn btn-sm btn-outline-danger ml-2 no-print btn-quitar-act-imagen"><i class="fas fa-times"></i> Quitar</button>' +
+                '      </div>' +
+                '    </div>' +
+                '  </div>' +
+                '</div>';
+        }
+
+        function cablearBloqueActividad(bloque) {
+            var input = bloque.querySelector('.act-evidencia-imagen-input');
+            var wrapper = bloque.querySelector('.act-evidencia-imagen-wrapper');
+            var preview = bloque.querySelector('.act-evidencia-imagen-preview');
+            var fileLabel = input.nextElementSibling;
+
+            input.addEventListener('change', function () {
+                var file = input.files && input.files[0];
+                if (!file) return;
+                if (fileLabel) fileLabel.textContent = file.name;
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    wrapper.style.display = 'block';
+                    guardarEstado();
+                };
+                reader.readAsDataURL(file);
+            });
+
+            bloque.querySelector('.btn-quitar-act-imagen').addEventListener('click', function () {
+                input.value = '';
+                preview.src = '';
+                wrapper.style.display = 'none';
+                if (fileLabel) fileLabel.textContent = 'Seleccionar imagen...';
+                guardarEstado();
+            });
+
+            bloque.querySelector('.btnRemoveActividad').addEventListener('click', function () {
+                var total = document.querySelectorAll('#contenedorActividades .actividad-bloque').length;
+                if (total <= MIN_ACTIVIDADES) {
+                    alert('Debe mantener al menos ' + MIN_ACTIVIDADES + ' actividades registradas.');
+                    return;
+                }
+                bloque.remove();
+                renumerarActividades();
+                guardarEstado();
+            });
+        }
+
+        function renumerarActividades() {
+            document.querySelectorAll('#contenedorActividades .actividad-bloque strong').forEach(function (el, idx) {
+                el.textContent = 'Actividad ' + (idx + 1);
+            });
+        }
+
+        function agregarBloqueActividad(datos) {
+            var contenedor = document.getElementById('contenedorActividades');
+            var indice = contenedor.querySelectorAll('.actividad-bloque').length;
+            var div = document.createElement('div');
+            div.innerHTML = construirBloqueActividadHTML(indice, datos);
+            var bloque = div.firstElementChild;
+            contenedor.appendChild(bloque);
+            cablearBloqueActividad(bloque);
+            return bloque;
+        }
+
+        function renderizarActividadesIniciales(listaGuardada) {
+            var contenedor = document.getElementById('contenedorActividades');
+            contenedor.innerHTML = '';
+            var total = Math.max(MIN_ACTIVIDADES, (listaGuardada || []).length);
+            for (var i = 0; i < total; i++) {
+                agregarBloqueActividad((listaGuardada || [])[i]);
             }
-            calcularPeriodo();
-            numeroActual = document.getElementById('bitacoraNumero').value;
-            renderizarEvidencias(numeroActual);
+        }
+
+        document.getElementById('btnAddActividad').addEventListener('click', function () {
+            agregarBloqueActividad();
+            guardarEstado();
         });
 
-        document.getElementById('fechaInicioEtapa').addEventListener('change', function () {
-            calcularPeriodo();
-            renderizarEvidencias(numeroActual);
-        });
+        // Autoguardado ante cualquier cambio dentro del formulario
+        document.getElementById('formBitacora').addEventListener('input', guardarEstado);
+        document.getElementById('formBitacora').addEventListener('change', guardarEstado);
 
         // ============================================================
-        //  Restricción "solo número" en documento, teléfono y ficha
+        //  Restricción "solo número"
         // ============================================================
-
-        // Restringir a solo números los campos marcados con la clase "solo-numero"
-
         document.querySelectorAll('.solo-numero').forEach(function (input) {
             input.addEventListener('input', function () {
                 var soloDigitos = input.value.replace(/[^0-9]/g, '');
-                if (input.value !== soloDigitos) {
-                    input.value = soloDigitos;
-                }
+                if (input.value !== soloDigitos) input.value = soloDigitos;
             });
-
-            // Bloquea también teclas no numéricas (permite navegación, borrar, pegar, etc.)
-
             input.addEventListener('keypress', function (e) {
-                if (e.key.length === 1 && !/[0-9]/.test(e.key)) {
-                    e.preventDefault();
-                }
+                if (e.key.length === 1 && !/[0-9]/.test(e.key)) e.preventDefault();
             });
-
-            // Limpia si pegan texto con caracteres no numéricos
-
             input.addEventListener('paste', function (e) {
                 var texto = (e.clipboardData || window.clipboardData).getData('text');
                 if (/[^0-9]/.test(texto)) {
@@ -949,10 +866,10 @@
                 }
             });
         });
+
         // ============================================================
         //  Firmas (imagen) — una sola vez, prevalecen en las 12 bitácoras
         // ============================================================
-        // Carga y vista previa de firmas (imagen)
         function configurarFirma(prefijo) {
             var input = document.getElementById(prefijo + 'Input');
             var previewWrapper = document.getElementById(prefijo + 'PreviewWrapper');
@@ -963,7 +880,6 @@
                 var file = input.files && input.files[0];
                 if (!file) return;
                 if (fileLabel) fileLabel.textContent = file.name;
-
                 var reader = new FileReader();
                 reader.onload = function (e) {
                     preview.src = e.target.result;
@@ -973,7 +889,6 @@
                 reader.readAsDataURL(file);
             });
         }
-
         ['firmaAprendiz', 'firmaInstructor', 'firmaCoformador'].forEach(configurarFirma);
 
         document.querySelectorAll('.btnQuitarFirma').forEach(function (btn) {
@@ -983,7 +898,6 @@
                 var previewWrapper = document.getElementById(prefijo + 'PreviewWrapper');
                 var preview = document.getElementById(prefijo + 'Preview');
                 var fileLabel = input.nextElementSibling;
-
                 input.value = '';
                 preview.src = '';
                 previewWrapper.style.display = 'none';
@@ -993,120 +907,65 @@
         });
 
         // ============================================================
-        //  Agregar / quitar filas de la PLANTILLA de actividades
-        //  (al cambiar, la sección de evidencias se vuelve a dibujar para que tenga
-        //   el mismo número de bloques que actividades hay)
-        // ============================================================
-        document.getElementById('btnAddActividad').addEventListener('click', function () {
-            var tbody = document.querySelector('#tablaActividades tbody');
-            var newRow = tbody.querySelector('.actividad-row').cloneNode(true);
-            newRow.querySelectorAll('input, textarea').forEach(function (el) {
-                el.value = '';
-                el.classList.remove('is-invalid');
-            });
-            tbody.appendChild(newRow);
-            guardarEstado();
-            renderizarEvidencias(numeroActual);
-        });
-
-        document.querySelector('#tablaActividades tbody').addEventListener('click', function (e) {
-            var btn = e.target.closest('.btnRemoveActividad');
-            if (!btn) return;
-            var rows = document.querySelectorAll('#tablaActividades tbody tr');
-            var MIN_FILAS_ACTIVIDADES = 3;
-            if (rows.length > MIN_FILAS_ACTIVIDADES) {
-                btn.closest('tr').remove();
-                guardarEstado();
-                renderizarEvidencias(numeroActual);
-            } else {
-                alert('Debe mantener al menos ' + MIN_FILAS_ACTIVIDADES + ' actividades registradas.');
-            }
-        });
-
-        // ============================================================
-        //  Validación: plantilla de actividades (una sola vez) + evidencias
-        //  de la bitácora que se está viendo actualmente.
+        //  Validación (una sola vez: aplica a las 12 bitácoras)
         // ============================================================
         function validarActividades() {
             var errores = [];
-
-            // --- Plantilla (descripción + competencias), aplica a las 12 bitácoras ---
-            var filasPlantilla = Array.from(document.querySelectorAll('#tablaActividades tbody tr'));
+            var bloques = Array.from(document.querySelectorAll('#contenedorActividades .actividad-bloque'));
             var descripciones = [];
             var competencias = [];
-            var plantillaCompleta = 0;
+            var completas = 0;
 
-            filasPlantilla.forEach(function (fila, idx) {
-                var numFila = idx + 1;
-                var descInput = fila.querySelector('[name="actividad_descripcion[]"]');
-                var compInput = fila.querySelector('[name="actividad_competencias[]"]');
+            bloques.forEach(function (bloque, idx) {
+                var numAct = idx + 1;
+                var descInput = bloque.querySelector('.act-descripcion');
+                var compInput = bloque.querySelector('.act-competencias');
+                var fiInput = bloque.querySelector('.act-fecha-inicio');
+                var ffInput = bloque.querySelector('.act-fecha-fin');
+                var textoInput = bloque.querySelector('.act-evidencia-texto');
+                var imgPreview = bloque.querySelector('.act-evidencia-imagen-preview');
+                var tieneImagen = imgPreview && imgPreview.src && imgPreview.src.indexOf('data:') === 0;
+
                 var desc = descInput.value.trim();
                 var comp = compInput.value.trim();
+                var fi = fiInput.value;
+                var ff = ffInput.value;
+                var texto = textoInput.value.trim();
 
-                if (!desc && !comp) return; // fila vacía extra, se ignora
+                var filaVacia = !desc && !comp && !fi && !ff && !texto && !tieneImagen;
+                if (filaVacia) return;
 
-                var filaOk = true;
-                if (!desc) { descInput.classList.add('is-invalid'); errores.push('Actividad ' + numFila + ': la descripción es obligatoria.'); filaOk = false; }
-                if (!comp) { compInput.classList.add('is-invalid'); errores.push('Actividad ' + numFila + ': las competencias aplicadas son obligatorias.'); filaOk = false; }
+                var ok = true;
+                if (!desc) { descInput.classList.add('is-invalid'); errores.push('Actividad ' + numAct + ': la descripción es obligatoria.'); ok = false; }
+                if (!comp) { compInput.classList.add('is-invalid'); errores.push('Actividad ' + numAct + ': las competencias aplicadas son obligatorias.'); ok = false; }
+                if (!fi) { fiInput.classList.add('is-invalid'); errores.push('Actividad ' + numAct + ': la fecha de inicio es obligatoria.'); ok = false; }
+                if (!ff) { ffInput.classList.add('is-invalid'); errores.push('Actividad ' + numAct + ': la fecha de fin es obligatoria.'); ok = false; }
+                if (fi && ff && fi > ff) { ffInput.classList.add('is-invalid'); errores.push('Actividad ' + numAct + ': la fecha de fin no puede ser anterior a la de inicio.'); ok = false; }
+                if (!texto && !tieneImagen) { textoInput.classList.add('is-invalid'); errores.push('Actividad ' + numAct + ': agrega la evidencia como texto, como imagen, o ambas.'); ok = false; }
 
                 if (desc) {
                     var descNorm = desc.toLowerCase();
                     if (descripciones.indexOf(descNorm) !== -1) {
                         descInput.classList.add('is-invalid');
-                        errores.push('Actividad ' + numFila + ': la descripción está repetida; cada actividad debe ser diferente.');
-                        filaOk = false;
+                        errores.push('Actividad ' + numAct + ': la descripción está repetida; cada actividad debe ser diferente.');
+                        ok = false;
                     } else { descripciones.push(descNorm); }
                 }
                 if (comp) {
                     var compNorm = comp.toLowerCase();
                     if (competencias.indexOf(compNorm) !== -1) {
                         compInput.classList.add('is-invalid');
-                        errores.push('Actividad ' + numFila + ': la competencia está repetida; cada competencia debe ser diferente.');
-                        filaOk = false;
+                        errores.push('Actividad ' + numAct + ': la competencia está repetida; cada competencia debe ser diferente.');
+                        ok = false;
                     } else { competencias.push(compNorm); }
                 }
 
-                if (filaOk && desc && comp) plantillaCompleta++;
+                if (ok && desc && comp && fi && ff && (texto || tieneImagen)) completas++;
             });
 
-            if (plantillaCompleta < 3) {
-                errores.push('Debe registrar al menos 3 actividades completas (descripción y competencias).');
+            if (completas < MIN_ACTIVIDADES) {
+                errores.push('Debe registrar al menos ' + MIN_ACTIVIDADES + ' actividades completas.');
             }
-
-            // --- Evidencias de la bitácora que se está viendo ---
-            if (!numeroActual) {
-                errores.push('Selecciona el número de bitácora en el Encabezado antes de continuar.');
-                return errores;
-            }
-
-            var periodoDesde = document.getElementById('periodoDesde').value;
-            var periodoHasta = document.getElementById('periodoHasta').value;
-            var bloques = document.querySelectorAll('#contenedorEvidencias .evidencia-bloque');
-
-            bloques.forEach(function (bloque, idx) {
-                var numAct = idx + 1;
-                var fiInput = bloque.querySelector('.evid-fecha-inicio');
-                var ffInput = bloque.querySelector('.evid-fecha-fin');
-                var textoInput = bloque.querySelector('.evid-texto');
-                var imgPreview = bloque.querySelector('.evid-imagen-preview');
-                var tieneImagen = imgPreview && imgPreview.src && imgPreview.src.indexOf('data:') === 0;
-
-                var fi = fiInput.value;
-                var ff = ffInput.value;
-                var texto = textoInput.value.trim();
-
-                if (!fi) { fiInput.classList.add('is-invalid'); errores.push('Evidencia de actividad ' + numAct + ' (bitácora ' + numeroActual + '): la fecha de inicio es obligatoria.'); }
-                if (!ff) { ffInput.classList.add('is-invalid'); errores.push('Evidencia de actividad ' + numAct + ' (bitácora ' + numeroActual + '): la fecha de fin es obligatoria.'); }
-                if (fi && ff && fi > ff) { ffInput.classList.add('is-invalid'); errores.push('Evidencia de actividad ' + numAct + ' (bitácora ' + numeroActual + '): la fecha de fin no puede ser anterior a la de inicio.'); }
-                if (periodoDesde && periodoHasta) {
-                    if (fi && (fi < periodoDesde || fi > periodoHasta)) { fiInput.classList.add('is-invalid'); errores.push('Evidencia de actividad ' + numAct + ' (bitácora ' + numeroActual + '): la fecha de inicio debe estar dentro del período (' + periodoDesde + ' a ' + periodoHasta + ').'); }
-                    if (ff && (ff < periodoDesde || ff > periodoHasta)) { ffInput.classList.add('is-invalid'); errores.push('Evidencia de actividad ' + numAct + ' (bitácora ' + numeroActual + '): la fecha de fin debe estar dentro del período (' + periodoDesde + ' a ' + periodoHasta + ').'); }
-                }
-                if (!texto && !tieneImagen) {
-                    textoInput.classList.add('is-invalid');
-                    errores.push('Evidencia de actividad ' + numAct + ' (bitácora ' + numeroActual + '): agrega la evidencia como texto, como imagen, o ambas.');
-                }
-            });
 
             return errores;
         }
@@ -1119,8 +978,53 @@
             contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
+        function validarTodoAntesDeGenerar() {
+            guardarEstado();
+
+            var form = document.getElementById('formBitacora');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return null;
+            }
+
+            document.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
+            document.getElementById('erroresValidacion').classList.add('d-none');
+
+            var errores = validarActividades();
+            if (errores.length > 0) {
+                mostrarErrores(errores);
+                return null;
+            }
+
+            return recolectarDatosCompletos();
+        }
+
         // ============================================================
-        //  Utilidades para imágenes (firmas y evidencias) en PDF/Word
+        //  Recolección de los datos completos: las 12 bitácoras comparten
+        //  exactamente la misma info (solo cambia el número/período informativo).
+        // ============================================================
+        function recolectarDatosCompletos() {
+            var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
+            var bitacoras = [];
+            for (var n = 1; n <= MAX_BITACORAS; n++) {
+                var periodo = periodoParaNumero(fechaInicioEtapa, n);
+                bitacoras.push({
+                    numero: n,
+                    periodoDesde: periodo ? periodo.desde : '',
+                    periodoHasta: periodo ? periodo.hasta : ''
+                });
+            }
+            return {
+                campos: ESTADO.campos,
+                alternativa: ESTADO.alternativa,
+                actividades: ESTADO.actividades,
+                firmas: ESTADO.firmas,
+                bitacoras: bitacoras
+            };
+        }
+
+        // ============================================================
+        //  Utilidades para imágenes (firmas y evidencias) en el PDF
         // ============================================================
         function dataUrlABytes(dataUrl) {
             var base64 = dataUrl.split(',')[1];
@@ -1149,375 +1053,427 @@
         }
 
         // ============================================================
-        //  Recolección de los datos completos de las 12 bitácoras
+        //  EXCEL — usa la PLANTILLA OFICIAL real (hoja "Formato Bitácora Individual"
+        //  del archivo GFPI-F-147), clonada y rellenada 12 veces (una por bitácora).
         // ============================================================
-        function obtenerEvidenciasParaBitacora(numero, fechaInicioEtapa) {
-            var periodo = periodoParaNumero(fechaInicioEtapa, numero);
-            var totalActividades = contarActividadesPlantilla();
-            var guardadas = ESTADO.porBitacora[numero] || [];
-            var resultado = [];
-            for (var i = 0; i < totalActividades; i++) {
-                var datos = guardadas[i] || {};
-                resultado.push({
-                    fecha_inicio: datos.fecha_inicio || (periodo ? periodo.desde : ''),
-                    fecha_fin: datos.fecha_fin || (periodo ? periodo.hasta : ''),
-                    evidencia_texto: datos.evidencia_texto || '',
-                    evidencia_imagen: datos.evidencia_imagen || null,
-                    observaciones: datos.observaciones || ''
-                });
-            }
-            return resultado;
+        var RUTA_PLANTILLA_EXCEL = 'plantilla/GFPI-F-147FormatoBitacoraSeguimientoEtapaProductiva.xlsx';
+        var NOMBRE_HOJA_PLANTILLA = 'Formato Bitácora Individual';
+
+        // La plantilla oficial trae internamente un rango de celdas (!ref) inflado
+        // (declara filas hasta la ~243714 aunque el contenido real termina como en la fila 82).
+        // Si copiáramos ese rango tal cual, cada hoja generada pesaría decenas de MB.
+        // Por eso se recalcula el rango real a partir de las celdas que sí tienen datos.
+        function calcularRangoReal(ws) {
+            var maxFila = 0, maxCol = 0;
+            Object.keys(ws).forEach(function (key) {
+                if (key[0] === '!') return;
+                var decoded = XLSX.utils.decode_cell(key);
+                if (decoded.r > maxFila) maxFila = decoded.r;
+                if (decoded.c > maxCol) maxCol = decoded.c;
+            });
+            return XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: maxFila, c: maxCol } });
         }
 
-        function recolectarDatosCompletos() {
-            var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
-            var bitacoras = [];
-            for (var n = 1; n <= MAX_BITACORAS; n++) {
-                var periodo = periodoParaNumero(fechaInicioEtapa, n);
-                bitacoras.push({
-                    numero: n,
-                    periodoDesde: periodo ? periodo.desde : '',
-                    periodoHasta: periodo ? periodo.hasta : '',
-                    evidencias: obtenerEvidenciasParaBitacora(n, fechaInicioEtapa)
-                });
+        function clonarHoja(ws) {
+            var nueva = {};
+            Object.keys(ws).forEach(function (key) {
+                if (key[0] === '!') return;
+                nueva[key] = Object.assign({}, ws[key]);
+            });
+            if (ws['!merges']) {
+                nueva['!merges'] = ws['!merges']
+                    .filter(function (m) { return m.e.r < 90; }) // descarta merges dentro del rango inflado
+                    .map(function (m) {
+                        return { s: { r: m.s.r, c: m.s.c }, e: { r: m.e.r, c: m.e.c } };
+                    });
             }
-            return {
-                campos: ESTADO.campos,
-                alternativa: ESTADO.alternativa,
-                actividades: ESTADO.actividades,
-                firmas: ESTADO.firmas,
-                bitacoras: bitacoras
+            if (ws['!cols']) nueva['!cols'] = ws['!cols'].slice();
+            nueva['!ref'] = calcularRangoReal(nueva);
+            return nueva;
+        }
+
+        function setCelda(ws, addr, valor) {
+            if (valor === undefined || valor === null) valor = '';
+            valor = String(valor);
+            if (ws[addr]) {
+                ws[addr].v = valor;
+                ws[addr].t = 's';
+                delete ws[addr].w;
+                delete ws[addr].f;
+            } else {
+                ws[addr] = { t: 's', v: valor };
+            }
+        }
+
+        // Mapeo de celdas de la plantilla oficial (hoja "Formato Bitácora Individual")
+        var MAPA_ALTERNATIVAS_CELDA = {
+            'Contrato de aprendizaje': 'C37',
+            'Monitoria': 'H37',
+            'Proyecto productivo': 'H39',
+            'Contrato de vínculo formativo': 'C41',
+            'Vínculo laboral': 'H41'
+        };
+
+        function llenarHojaBitacora(ws, datos, bit) {
+            setCelda(ws, 'B11', bit.numero);
+            setCelda(ws, 'E11', (bit.periodoDesde || '') + ' hasta ' + (bit.periodoHasta || ''));
+
+            setCelda(ws, 'B15', datos.campos.aprendiz_nombre);
+            setCelda(ws, 'E15', datos.campos.aprendiz_tipo_doc);
+            setCelda(ws, 'F15', datos.campos.aprendiz_num_doc);
+            setCelda(ws, 'H15', datos.campos.aprendiz_telefono);
+
+            setCelda(ws, 'B17', datos.campos.aprendiz_correo_institucional);
+            setCelda(ws, 'E17', datos.campos.aprendiz_correo_personal);
+            setCelda(ws, 'H17', datos.campos.aprendiz_direccion);
+
+            setCelda(ws, 'B19', datos.campos.aprendiz_ficha);
+            setCelda(ws, 'E19', datos.campos.aprendiz_modalidad_formacion);
+            setCelda(ws, 'H19', datos.campos.aprendiz_programa);
+
+            setCelda(ws, 'B21', datos.campos.modalidad_ejecucion);
+            setCelda(ws, 'E21', datos.campos.etapa_exterior);
+            setCelda(ws, 'H21', datos.campos.etapa_pais);
+
+            setCelda(ws, 'B25', datos.campos.empresa_nombre);
+            setCelda(ws, 'F25', datos.campos.empresa_nit);
+            setCelda(ws, 'H25', datos.campos.empresa_direccion);
+
+            setCelda(ws, 'B29', datos.campos.coformador_nombre);
+            setCelda(ws, 'E29', datos.campos.coformador_cargo);
+            setCelda(ws, 'G29', datos.campos.coformador_telefono);
+            setCelda(ws, 'H29', datos.campos.coformador_correo);
+
+            setCelda(ws, 'B33', datos.campos.instructor_nombre);
+            setCelda(ws, 'G33', datos.campos.instructor_correo);
+
+            if (MAPA_ALTERNATIVAS_CELDA[datos.alternativa]) {
+                setCelda(ws, MAPA_ALTERNATIVAS_CELDA[datos.alternativa], 'X');
+            }
+
+            // La plantilla oficial trae 5 filas para actividades (filas 47-56, de a 2 filas c/u)
+            var FILAS_BASE_ACTIVIDADES = [47, 49, 51, 53, 55];
+            datos.actividades.slice(0, FILAS_BASE_ACTIVIDADES.length).forEach(function (act, idx) {
+                var fila = FILAS_BASE_ACTIVIDADES[idx];
+                var evidenciaTexto = act.evidencia_texto || (act.evidencia_imagen ? '[Imagen adjunta: ver el PDF de esta bitácora]' : '');
+                setCelda(ws, 'B' + fila, act.descripcion);
+                setCelda(ws, 'D' + fila, act.competencias);
+                setCelda(ws, 'F' + fila, act.fecha_inicio);
+                setCelda(ws, 'G' + fila, act.fecha_fin);
+                setCelda(ws, 'H' + fila, evidenciaTexto);
+                setCelda(ws, 'I' + fila, act.observaciones);
+            });
+
+            setCelda(ws, 'B66', datos.campos.arl_afiliado);
+            setCelda(ws, 'C66', datos.campos.arl_nivel_riesgo);
+            setCelda(ws, 'G65', datos.campos.arl_nivel_corresponde);
+            setCelda(ws, 'I65', datos.campos.arl_epp);
+
+            setCelda(ws, 'B73', datos.firmas.firmaAprendiz ? '[Firma adjunta: ver el PDF]' : '');
+            setCelda(ws, 'G73', datos.campos.fecha_entrega);
+            setCelda(ws, 'C77', datos.firmas.firmaInstructor ? '[Firma adjunta: ver el PDF]' : '');
+            setCelda(ws, 'H77', datos.firmas.firmaCoformador ? '[Firma adjunta: ver el PDF]' : '');
+        }
+
+        function generarExcel(datos) {
+            fetch(RUTA_PLANTILLA_EXCEL)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('No se encontró la plantilla en "' + RUTA_PLANTILLA_EXCEL + '" (HTTP ' + resp.status + ').');
+                    return resp.arrayBuffer();
+                })
+                .then(function (buffer) {
+                    var wbPlantilla = XLSX.read(new Uint8Array(buffer), { type: 'array' });
+                    var hojaOriginal = wbPlantilla.Sheets[NOMBRE_HOJA_PLANTILLA];
+                    if (!hojaOriginal) throw new Error('La plantilla no tiene una hoja llamada "' + NOMBRE_HOJA_PLANTILLA + '".');
+
+                    var wbSalida = XLSX.utils.book_new();
+                    datos.bitacoras.forEach(function (bit) {
+                        var hoja = clonarHoja(hojaOriginal);
+                        llenarHojaBitacora(hoja, datos, bit);
+                        XLSX.utils.book_append_sheet(wbSalida, hoja, 'Bitacora ' + bit.numero);
+                    });
+
+                    XLSX.writeFile(wbSalida, construirNombreArchivo(datos) + '.xlsx');
+                })
+                .catch(function (err) {
+                    console.error('Error generando Excel:', err);
+                    alert('No se pudo generar el Excel con la plantilla oficial.\n\n' + err.message +
+                        '\n\nVerifica que el archivo esté en la carpeta "plantilla/" de tu proyecto y que estés corriendo el sitio con un servidor local (Live Server), no abriendo el HTML directo.');
+                });
+        }
+
+        // ============================================================
+        //  PDF — réplica visual del formato oficial (barras, tablas, casillas),
+        //  1 imagen/página por bitácora. Se arma el HTML con el mismo layout
+        //  del formato real y se rasteriza con html2canvas para incrustarlo en el PDF.
+        // ============================================================
+        var TEXTO_DECRETO = 'Decreto 055 de 2015, por el cual se reglamenta la afiliación de estudiantes al Sistema General de Riesgos Laborales y se dictan otras disposiciones';
+        var TEXTO_ESPACIO_OBLIGATORIO = 'Este espacio debe ser siempre diligenciado.';
+        var TEXTO_ARTICULO_11 = 'Artículo 11. Obligaciones de la institución de educación. Corresponde a las instituciones de educación a las que pertenezcan los estudiantes, que deban ser afiliados al Sistema General de Riesgos Laborales de conformidad con el presente decreto:';
+        var TEXTO_OBLIGACION_1 = '1. Revisar periódicamente que el estudiante en práctica desarrolle labores relacionadas exclusivamente con su programa de formación o educación, que ameritaron su afiliación al Sistema General de Riesgos Laborales.';
+        var TEXTO_OBLIGACION_2 = '2. Verificar que el espacio de práctica cuente con los elementos de protección personal apropiados según el riesgo ocupacional.';
+
+        function barraNegra(texto) {
+            return '<div style="background:#000;color:#fff;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:9px;">' + escapeHtml(texto) + '</div>';
+        }
+        function barraBlanca(texto) {
+            return '<div style="background:#fff;color:#000;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:9px;">' + escapeHtml(texto) + '</div>';
+        }
+        function celdaEtiqueta(texto) {
+            return '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px 3px;">' + escapeHtml(texto) + '</td>';
+        }
+        function celdaValor(texto, alinear) {
+            return '<td style="border:1px solid #000;text-align:' + (alinear || 'left') + ';font-size:8px;padding:3px 4px;">' + escapeHtml(texto || '') + '</td>';
+        }
+        function casilla(marcada) {
+            return '<div style="width:9px;height:9px;border:1px solid #000;margin:0 auto;background:' + (marcada ? '#000' : '#fff') + ';"></div>';
+        }
+
+        function construirHtmlBitacora(datos, bit, logoDataUrl) {
+            var c = datos.campos;
+
+            var filasActividades = '';
+            var totalFilas = Math.max(5, datos.actividades.length);
+            for (var i = 0; i < totalFilas; i++) {
+                var act = datos.actividades[i] || {};
+                var evidenciaTexto = act.evidencia_texto || (act.evidencia_imagen ? '(ver imagen adjunta)' : '');
+                filasActividades += '<tr>' +
+                    celdaValor(act.descripcion, 'center') +
+                    celdaValor(act.competencias, 'center') +
+                    celdaValor(act.fecha_inicio, 'center') +
+                    celdaValor(act.fecha_fin, 'center') +
+                    celdaValor(evidenciaTexto, 'center') +
+                    celdaValor(act.observaciones, 'center') +
+                    '</tr>';
+            }
+
+            var mapaAlt = {
+                'Contrato de aprendizaje': 'altContrato',
+                'Monitoria': 'altMonitoria',
+                'Proyecto productivo': 'altProyecto',
+                'Contrato de vínculo formativo': 'altVinculo',
+                'Vínculo laboral': 'altLaboral'
             };
-        }
+            var altMarcada = mapaAlt[datos.alternativa] || '';
+            function xSi(id) { return altMarcada === id ? 'X' : ''; }
 
-        // Valida TODO (campos comunes + plantilla + evidencias de las 12 bitácoras) antes de generar.
-        // Devuelve los datos completos si todo está bien, o null si hay que corregir algo.
-        function validarTodoAntesDeGenerar() {
-            guardarEstado();
-
-            var form = document.getElementById('formBitacora');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return null;
+            function bloqueFirma(dataUrl) {
+                return dataUrl ? '<img src="' + dataUrl + '" style="max-height:55px;max-width:140px;">' : '&nbsp;';
             }
 
-            document.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
-            document.getElementById('erroresValidacion').classList.add('d-none');
+            return '' +
+                '<div style="width:780px;padding:14px;font-family:Arial,Helvetica,sans-serif;color:#000;font-size:8px;">' +
 
-            var errores = validarActividades(); // plantilla + evidencias de la bitácora que se ve en pantalla
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' +
+                '<td style="border:1px solid #000;text-align:center;padding:6px;" >' + (logoDataUrl ? '<img src="' + logoDataUrl + '" style="height:40px;">' : '') + '</td>' +
+                '<td style="border:1px solid #000;width:160px;padding:0;">' +
+                '<div style="border-bottom:1px solid #000;padding:3px;font-size:8px;">Código: GFPI-F-147</div>' +
+                '<div style="padding:3px;font-size:8px;">Versión: 05</div>' +
+                '</td>' +
+                '</tr>' +
+                '</table>' +
 
-            var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
-            for (var n = 1; n <= MAX_BITACORAS; n++) {
-                if (String(n) === String(numeroActual)) continue; // esa ya se validó arriba, con resaltado visual
-                var periodo = periodoParaNumero(fechaInicioEtapa, n);
-                var evidencias = obtenerEvidenciasParaBitacora(n, fechaInicioEtapa);
-                evidencias.forEach(function (ev, idx) {
-                    var numAct = idx + 1;
-                    if (!ev.fecha_inicio || !ev.fecha_fin) {
-                        errores.push('Bitácora ' + n + ', actividad ' + numAct + ': faltan las fechas de la evidencia (selecciona esa bitácora en el Encabezado para completarla).');
+                barraNegra('PROCESO') +
+                barraBlanca('GESTIÓN DE FORMACIÓN PROFESIONAL INTEGRAL') +
+                barraNegra('NOMBRE DEL FORMATO') +
+                barraBlanca('FORMATO BITÁCORA DE SEGUIMIENTO ETAPA PRODUCTIVA') +
+                barraNegra('CLASIFICACIÓN DE LA INFORMACIÓN') +
+
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Pública</td>' +
+                '<td style="border:1px solid #000;width:26px;">' + casilla(true) + '</td>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Pública Clasificada</td>' +
+                '<td style="border:1px solid #000;width:26px;">' + casilla(false) + '</td>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Pública Reservada</td>' +
+                '<td style="border:1px solid #000;width:26px;">' + casilla(false) + '</td>' +
+                '</tr>' +
+                '</table>' +
+
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' + celdaEtiqueta('Bitácoras N°') + '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;" colspan="2">PERÍODO A REPORTAR</td></tr>' +
+                '<tr>' + celdaValor(bit.numero, 'center') + celdaValor(bit.periodoDesde, 'center') + celdaValor(bit.periodoHasta, 'center') + '</tr>' +
+                '</table>' +
+
+                barraNegra('Datos del aprendiz') +
+                '<table style="width:100%;border-collapse:collapse;">' +
+                '<tr>' + celdaEtiqueta('NOMBRE DEL APRENDIZ') + celdaEtiqueta('TIPO DE DOCUMENTO') + celdaEtiqueta('NUMERO DE IDENTIFICACION') + celdaEtiqueta('TELEFONO') + '</tr>' +
+                '<tr>' + celdaValor(c.aprendiz_nombre, 'center') + celdaValor(c.aprendiz_tipo_doc, 'center') + celdaValor(c.aprendiz_num_doc, 'center') + celdaValor(c.aprendiz_telefono, 'center') + '</tr>' +
+                '<tr>' + celdaEtiqueta('Correo electrónico institucional') + celdaEtiqueta('Correo electrónico personal') + celdaEtiqueta('Direccion Residencial') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
+                '<tr>' + celdaValor(c.aprendiz_correo_institucional, 'center') + celdaValor(c.aprendiz_correo_personal, 'center') + celdaValor(c.aprendiz_direccion, 'center') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
+                '<tr>' + celdaEtiqueta('Numero de Grupo') + celdaEtiqueta('Modalidad') + celdaEtiqueta('Programa de Formacion') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
+                '<tr>' + celdaValor(c.aprendiz_ficha, 'center') + celdaValor(c.aprendiz_modalidad_formacion, 'center') + celdaValor(c.aprendiz_programa, 'center') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
+                '</table>' +
+
+                barraNegra('Datos del ente co-formador') +
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' + celdaEtiqueta('EMPRESA') + celdaEtiqueta('NIT') + celdaEtiqueta('DIRECCION') + '</tr>' +
+                '<tr>' + celdaValor(c.empresa_nombre, 'center') + celdaValor(c.empresa_nit, 'center') + celdaValor(c.empresa_direccion, 'center') + '</tr>' +
+                '</table>' +
+
+                barraNegra('Datos de la persona encargada del proceso formativo del aprendiz en la entidad co-formadora') +
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' + celdaEtiqueta('NOMBRE DEL ENTE COFORMADOR') + celdaEtiqueta('CARGO DEL ENTE COFORMADOR') + celdaEtiqueta('TELEFONO') + celdaEtiqueta('CORREO ELECTRÓNICO') + '</tr>' +
+                '<tr>' + celdaValor(c.coformador_nombre, 'center') + celdaValor(c.coformador_cargo, 'center') + celdaValor(c.coformador_telefono, 'center') + celdaValor(c.coformador_correo, 'center') + '</tr>' +
+                '</table>' +
+
+                barraNegra('Datos del instructor de seguimiento') +
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' + celdaEtiqueta('NOMBRE DE LA PERSONA CON ROL DE INSTRUCTOR DE SEGUIMIENTO:') + celdaEtiqueta('CORREO ELECTRÓNICO:') + '</tr>' +
+                '<tr>' + celdaValor(c.instructor_nombre, 'center') + celdaValor(c.instructor_correo, 'center') + '</tr>' +
+                '</table>' +
+
+                '<div style="border:1px solid #000;padding:3px;font-size:7.5px;margin-bottom:4px;">Seleccione con una "X" el tipo de alternativa de etapa productiva que está realizando, teniendo en cuenta el subtipo al cual pertenece si es el caso:</div>' +
+
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' +
+                '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;">ALTERNATIVA DE ETAPA PRODUCTIVA</td>' +
+                '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;width:60px;">Marque con una X</td>' +
+                '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;">Alternativa de etapa productiva</td>' +
+                '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;width:60px;">Marque con una X</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Contrato de Aprendizaje.</td>' +
+                '<td style="border:1px solid #000;text-align:center;font-weight:bold;">' + xSi('altContrato') + '</td>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Monitoria.</td>' +
+                '<td style="border:1px solid #000;text-align:center;font-weight:bold;">' + xSi('altMonitoria') + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;" rowspan="2">Vínculo Formativo.</td>' +
+                '<td style="border:1px solid #000;text-align:center;font-weight:bold;" rowspan="2">' + xSi('altVinculo') + '</td>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Proyecto productivo.</td>' +
+                '<td style="border:1px solid #000;text-align:center;font-weight:bold;">' + xSi('altProyecto') + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Vínculo laboral.</td>' +
+                '<td style="border:1px solid #000;text-align:center;font-weight:bold;">' + xSi('altLaboral') + '</td>' +
+                '</tr>' +
+                '</table>' +
+
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' +
+                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">DESCRIPCIÓN DE LA ACTIVIDAD</td>' +
+                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">Competencias del programa de formación aplicadas en el desarrollo de la actividad</td>' +
+                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">FECHA DE INICIO</td>' +
+                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">FECHA DE FIN</td>' +
+                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">EVIDENCIA DE CUMPLIMIENTO</td>' +
+                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">OBSERVACIONES, INASISTENCIAS, DIFICULTADES PRESENTADAS</td>' +
+                '</tr>' +
+                filasActividades +
+                '</table>' +
+
+                '<div style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;">' + escapeHtml(TEXTO_DECRETO) + '</div>' +
+                '<div style="border:1px solid #000;font-size:7.5px;padding:2px;">' + escapeHtml(TEXTO_ESPACIO_OBLIGATORIO) + '</div>' +
+                '<div style="border:1px solid #000;font-size:7px;padding:3px;margin-bottom:4px;">' +
+                escapeHtml(TEXTO_ARTICULO_11) + '<br>' + escapeHtml(TEXTO_OBLIGACION_1) + '<br>' + escapeHtml(TEXTO_OBLIGACION_2) +
+                '</div>' +
+
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">' +
+                '<tr>' +
+                celdaEtiqueta('¿La persona con rol de aprendiz se encuentra afiliado a la ARL?') +
+                celdaEtiqueta('Indique el nivel de riesgo actual') +
+                celdaEtiqueta('¿El nivel de riesgo de la ARL corresponde a las actividades que desarrolla la persona con rol de aprendiz en la empresa?') +
+                celdaEtiqueta('¿La persona con rol de aprendiz cuenta con los elementos de protección personal (EPP), requeridos para desarrollar su etapa productiva?') +
+                '</tr>' +
+                '<tr>' + celdaValor(c.arl_afiliado, 'center') + celdaValor(c.arl_nivel_riesgo, 'center') + celdaValor(c.arl_nivel_corresponde, 'center') + celdaValor(c.arl_epp, 'center') + '</tr>' +
+                '</table>' +
+
+                '<table style="width:100%;border-collapse:collapse;">' +
+                '<tr>' +
+                '<td style="border:0;text-align:center;padding:6px 6px 0 6px;height:55px;width:50%;vertical-align:bottom;">' + bloqueFirma(datos.firmas.firmaAprendiz) + '</td>' +
+                '<td style="border:0;text-align:center;padding:6px 6px 0 6px;vertical-align:bottom;">' + escapeHtml(c.fecha_entrega || '') + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td style="border:0;border-top:1px solid #000;text-align:center;font-size:7.5px;padding:2px;">Firma de la persona con rol de aprendiz</td>' +
+                '<td style="border:0;border-top:1px solid #000;text-align:center;font-size:7.5px;padding:2px;">Fecha entrega bitácora</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td style="border:0;text-align:center;padding:16px 6px 0 6px;height:55px;vertical-align:bottom;">' + bloqueFirma(datos.firmas.firmaInstructor) + '</td>' +
+                '<td style="border:0;text-align:center;padding:16px 6px 0 6px;vertical-align:bottom;">' + bloqueFirma(datos.firmas.firmaCoformador) + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td style="border:0;border-top:1px solid #000;text-align:center;font-size:7.5px;padding:2px;">Firma del instructor de seguimiento</td>' +
+                '<td style="border:0;border-top:1px solid #000;text-align:center;font-size:7.5px;padding:2px;">Firma de la persona con rol de jefe inmediato</td>' +
+                '</tr>' +
+                '</table>' +
+
+                '</div>';
+        }
+
+        // Nombre de archivo: Ficha - Cédula - Nombre completo - BIT
+        function construirNombreArchivo(datos) {
+            var partes = [
+                datos.campos.aprendiz_ficha || 'sinficha',
+                datos.campos.aprendiz_num_doc || 'sincedula',
+                datos.campos.aprendiz_nombre || 'sinnombre',
+                'BIT'
+            ];
+            var nombre = partes.join(' - ');
+            return nombre.replace(/[\\/:*?"<>|]/g, '-');
+        }
+
+        function generarPDF(datos) {
+            function continuarConLogo(dataUrlLogo) {
+                var contenedor = document.createElement('div');
+                contenedor.style.position = 'fixed';
+                contenedor.style.left = '-99999px';
+                contenedor.style.top = '0';
+                contenedor.style.background = '#fff';
+                document.body.appendChild(contenedor);
+
+                var ANCHO_PAGINA_PT = 612; // ancho tipo Carta, en puntos
+                var doc = null;
+
+                var indice = 0;
+                function procesarSiguiente() {
+                    if (indice >= datos.bitacoras.length) {
+                        document.body.removeChild(contenedor);
+                        doc.save(construirNombreArchivo(datos) + '.pdf');
                         return;
                     }
-                    if (periodo && (ev.fecha_inicio < periodo.desde || ev.fecha_inicio > periodo.hasta || ev.fecha_fin < periodo.desde || ev.fecha_fin > periodo.hasta)) {
-                        errores.push('Bitácora ' + n + ', actividad ' + numAct + ': las fechas no están dentro de su período (' + periodo.desde + ' a ' + periodo.hasta + ').');
-                    }
-                    if (!ev.evidencia_texto && !ev.evidencia_imagen) {
-                        errores.push('Bitácora ' + n + ', actividad ' + numAct + ': falta la evidencia de cumplimiento (selecciona esa bitácora en el Encabezado para completarla).');
-                    }
-                });
+                    var bit = datos.bitacoras[indice];
+                    contenedor.innerHTML = construirHtmlBitacora(datos, bit, dataUrlLogo);
+
+                    html2canvas(contenedor, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(function (canvas) {
+                        var imgData = canvas.toDataURL('image/jpeg', 0.92);
+                        // La altura de cada página se calcula a partir del contenido real
+                        // (en vez de forzar el alto fijo de una hoja Carta), así la imagen
+                        // llena exactamente el ancho de la página sin dejar franjas en blanco.
+                        var alturaPagina = ANCHO_PAGINA_PT * (canvas.height / canvas.width);
+
+                        if (!doc) {
+                            doc = new jspdf.jsPDF({ unit: 'pt', format: [ANCHO_PAGINA_PT, alturaPagina] });
+                        } else {
+                            doc.addPage([ANCHO_PAGINA_PT, alturaPagina]);
+                        }
+                        doc.addImage(imgData, 'JPEG', 0, 0, ANCHO_PAGINA_PT, alturaPagina);
+
+                        indice++;
+                        procesarSiguiente();
+                    }).catch(function (err) {
+                        document.body.removeChild(contenedor);
+                        console.error('Error generando el PDF:', err);
+                        alert('No se pudo generar el PDF: ' + err.message);
+                    });
+                }
+                procesarSiguiente();
             }
 
-            if (errores.length > 0) {
-                mostrarErrores(errores);
-                return null;
-            }
-
-            return recolectarDatosCompletos();
-        }
-
-        // ============================================================
-        //  Generación de Excel (.xlsx) — 1 hoja por bitácora
-        //  Nota: la librería usada (SheetJS, gratuita) no admite incrustar imágenes,
-        //  así que en Excel la evidencia-imagen queda indicada como texto; en PDF y Word sí se incrusta.
-        // ============================================================
-        function generarExcel(datos) {
-            var wb = XLSX.utils.book_new();
-
-            datos.bitacoras.forEach(function (bit) {
-                var filas = [];
-                filas.push(['FORMATO BITÁCORA DE SEGUIMIENTO ETAPA PRODUCTIVA - GFPI-F-147']);
-                filas.push(['Bitácora N°', bit.numero, 'Período', bit.periodoDesde + ' a ' + bit.periodoHasta]);
-                filas.push([]);
-                filas.push(['DATOS DEL APRENDIZ']);
-                filas.push(['Nombre', datos.campos.aprendiz_nombre || '']);
-                filas.push(['Tipo de documento', datos.campos.aprendiz_tipo_doc || '', 'Número', datos.campos.aprendiz_num_doc || '']);
-                filas.push(['Contacto', datos.campos.aprendiz_telefono || '']);
-                filas.push(['Correo institucional', datos.campos.aprendiz_correo_institucional || '']);
-                filas.push(['Correo personal', datos.campos.aprendiz_correo_personal || '']);
-                filas.push(['Dirección', datos.campos.aprendiz_direccion || '']);
-                filas.push(['Ficha', datos.campos.aprendiz_ficha || '', 'Programa', datos.campos.aprendiz_programa || '']);
-                filas.push(['Modalidad de formación', datos.campos.aprendiz_modalidad_formacion || '']);
-                filas.push(['Modalidad de ejecución', datos.campos.modalidad_ejecucion || '', 'Etapa en el exterior', datos.campos.etapa_exterior || '', 'País', datos.campos.etapa_pais || '']);
-                filas.push([]);
-                filas.push(['DATOS DEL ENTE CO-FORMADOR']);
-                filas.push(['Empresa', datos.campos.empresa_nombre || '', 'NIT', datos.campos.empresa_nit || '']);
-                filas.push(['Dirección', datos.campos.empresa_direccion || '']);
-                filas.push(['Encargado', datos.campos.coformador_nombre || '', 'Cargo', datos.campos.coformador_cargo || '']);
-                filas.push(['Contacto', datos.campos.coformador_telefono || '', 'Correo', datos.campos.coformador_correo || '']);
-                filas.push([]);
-                filas.push(['INSTRUCTOR DE SEGUIMIENTO']);
-                filas.push(['Nombre', datos.campos.instructor_nombre || '', 'Correo', datos.campos.instructor_correo || '']);
-                filas.push([]);
-                filas.push(['ALTERNATIVA DE ETAPA PRODUCTIVA', datos.alternativa || '']);
-                filas.push([]);
-                filas.push(['ACTIVIDADES Y EVIDENCIAS']);
-                filas.push(['Descripción', 'Competencias', 'Fecha inicio', 'Fecha fin', 'Evidencia', 'Observaciones']);
-                datos.actividades.forEach(function (act, idx) {
-                    var ev = bit.evidencias[idx] || {};
-                    var evidenciaTexto = ev.evidencia_texto || (ev.evidencia_imagen ? '[Imagen adjunta: ver el PDF o Word de esta bitácora]' : '');
-                    filas.push([act.descripcion || '', act.competencias || '', ev.fecha_inicio || '', ev.fecha_fin || '', evidenciaTexto, ev.observaciones || '']);
-                });
-                filas.push([]);
-                filas.push(['AFILIACIÓN ARL']);
-                filas.push(['Afiliado', datos.campos.arl_afiliado || '', 'Nivel de riesgo', datos.campos.arl_nivel_riesgo || '', 'Corresponde', datos.campos.arl_nivel_corresponde || '', 'EPP', datos.campos.arl_epp || '']);
-                filas.push([]);
-                filas.push(['Fecha entrega bitácora', datos.campos.fecha_entrega || '']);
-
-                var ws = XLSX.utils.aoa_to_sheet(filas);
-                ws['!cols'] = [{ wch: 26 }, { wch: 26 }, { wch: 16 }, { wch: 16 }, { wch: 30 }, { wch: 30 }];
-                XLSX.utils.book_append_sheet(wb, ws, 'Bitacora ' + bit.numero);
-            });
-
-            XLSX.writeFile(wb, 'bitacoras_' + (datos.campos.aprendiz_num_doc || 'aprendiz') + '.xlsx');
-        }
-
-        // ============================================================
-        //  Generación de PDF — 1 sección por bitácora, con imágenes incrustadas
-        // ============================================================
-        function generarPDF(datos) {
-            var doc = new jspdf.jsPDF({ unit: 'pt', format: 'letter' });
-            var margenX = 40;
-
-            datos.bitacoras.forEach(function (bit, indiceBit) {
-                if (indiceBit > 0) doc.addPage();
-                var y = 40;
-
-                doc.setFontSize(13); doc.setFont(undefined, 'bold');
-                doc.text('FORMATO BITÁCORA DE SEGUIMIENTO ETAPA PRODUCTIVA', margenX, y);
-                y += 16;
-                doc.setFontSize(9); doc.setFont(undefined, 'normal');
-                doc.text('GFPI-F-147   |   Bitácora N° ' + bit.numero + '   |   Período: ' + bit.periodoDesde + ' a ' + bit.periodoHasta, margenX, y);
-                y += 16;
-
-                doc.autoTable({
-                    startY: y,
-                    margin: { left: margenX, right: margenX },
-                    styles: { fontSize: 8, cellPadding: 3 },
-                    theme: 'grid',
-                    body: [
-                        ['Aprendiz', datos.campos.aprendiz_nombre || '', 'Documento', (datos.campos.aprendiz_tipo_doc || '') + ' ' + (datos.campos.aprendiz_num_doc || '')],
-                        ['Contacto', datos.campos.aprendiz_telefono || '', 'Correo institucional', datos.campos.aprendiz_correo_institucional || ''],
-                        ['Ficha', datos.campos.aprendiz_ficha || '', 'Programa', datos.campos.aprendiz_programa || ''],
-                        ['Empresa', datos.campos.empresa_nombre || '', 'NIT', datos.campos.empresa_nit || ''],
-                        ['Encargado empresa', datos.campos.coformador_nombre || '', 'Cargo', datos.campos.coformador_cargo || ''],
-                        ['Instructor', datos.campos.instructor_nombre || '', 'Correo instructor', datos.campos.instructor_correo || ''],
-                        ['Alternativa', datos.alternativa || '', '', '']
-                    ]
-                });
-                y = doc.lastAutoTable.finalY + 14;
-
-                doc.setFontSize(10); doc.setFont(undefined, 'bold');
-                doc.text('Actividades y evidencias', margenX, y);
-
-                var filasTabla = datos.actividades.map(function (act, idx) {
-                    var ev = bit.evidencias[idx] || {};
-                    return [
-                        act.descripcion || '',
-                        act.competencias || '',
-                        (ev.fecha_inicio || '') + ' a ' + (ev.fecha_fin || ''),
-                        ev.evidencia_texto || (ev.evidencia_imagen ? '(ver imagen abajo)' : ''),
-                        ev.observaciones || ''
-                    ];
-                });
-
-                doc.autoTable({
-                    startY: y + 6,
-                    margin: { left: margenX, right: margenX },
-                    head: [['Descripción', 'Competencias', 'Período actividad', 'Evidencia', 'Observaciones']],
-                    body: filasTabla,
-                    styles: { fontSize: 7.5, cellPadding: 3 },
-                    headStyles: { fillColor: [78, 115, 223] }
-                });
-                y = doc.lastAutoTable.finalY + 16;
-
-                // Imágenes de evidencia
-                bit.evidencias.forEach(function (ev, idx) {
-                    if (!ev.evidencia_imagen) return;
-                    if (y > 640) { doc.addPage(); y = 40; }
-                    doc.setFontSize(8); doc.setFont(undefined, 'normal');
-                    doc.text('Evidencia (imagen) — actividad ' + (idx + 1) + ':', margenX, y);
-                    y += 8;
-                    try {
-                        doc.addImage(ev.evidencia_imagen, formatoImagenDesdeDataUrl(ev.evidencia_imagen), margenX, y, 160, 100);
-                    } catch (err) { /* formato de imagen no soportado, se omite */ }
-                    y += 112;
-                });
-
-                if (y > 600) { doc.addPage(); y = 40; }
-                doc.setFontSize(10); doc.setFont(undefined, 'bold');
-                doc.text('Afiliación ARL', margenX, y);
-                doc.autoTable({
-                    startY: y + 6,
-                    margin: { left: margenX, right: margenX },
-                    theme: 'grid',
-                    styles: { fontSize: 8 },
-                    body: [[
-                        'Afiliado: ' + (datos.campos.arl_afiliado || ''),
-                        'Nivel de riesgo: ' + (datos.campos.arl_nivel_riesgo || ''),
-                        'Corresponde: ' + (datos.campos.arl_nivel_corresponde || ''),
-                        'EPP: ' + (datos.campos.arl_epp || '')
-                    ]]
-                });
-                y = doc.lastAutoTable.finalY + 16;
-
-                if (y > 580) { doc.addPage(); y = 40; }
-                doc.setFontSize(10); doc.setFont(undefined, 'bold');
-                doc.text('Firmas', margenX, y);
-                y += 8;
-                doc.setFontSize(8); doc.setFont(undefined, 'normal');
-
-                ['firmaAprendiz', 'firmaInstructor', 'firmaCoformador'].forEach(function (prefijo, i) {
-                    var etiqueta = prefijo === 'firmaAprendiz' ? 'Aprendiz' : (prefijo === 'firmaInstructor' ? 'Instructor' : 'Ente co-formador');
-                    var xPos = margenX + i * 170;
-                    doc.text(etiqueta, xPos, y);
-                    if (datos.firmas[prefijo]) {
-                        try {
-                            doc.addImage(datos.firmas[prefijo], formatoImagenDesdeDataUrl(datos.firmas[prefijo]), xPos, y + 4, 150, 60);
-                        } catch (err) { /* noop */ }
-                    } else {
-                        doc.text('(sin firma)', xPos, y + 20);
-                    }
-                });
-            });
-
-            doc.save('bitacoras_' + (datos.campos.aprendiz_num_doc || 'aprendiz') + '.pdf');
-        }
-
-        // ============================================================
-        //  Generación de Word (.docx) — 1 sección por bitácora, con imágenes incrustadas
-        // ============================================================
-        function generarWord(datos) {
-            var Docx = window.docx;
-
-            function filaEtiquetaValor(etiqueta, valor) {
-                return new Docx.Paragraph({
-                    children: [
-                        new Docx.TextRun({ text: etiqueta + ': ', bold: true }),
-                        new Docx.TextRun({ text: valor || '' })
-                    ]
-                });
-            }
-
-            var secciones = datos.bitacoras.map(function (bit) {
-                var hijos = [];
-
-                hijos.push(new Docx.Paragraph({ text: 'FORMATO BITÁCORA DE SEGUIMIENTO ETAPA PRODUCTIVA (GFPI-F-147)', heading: Docx.HeadingLevel.HEADING_1 }));
-                hijos.push(new Docx.Paragraph({ text: 'Bitácora N° ' + bit.numero + ' — Período: ' + bit.periodoDesde + ' a ' + bit.periodoHasta }));
-                hijos.push(new Docx.Paragraph({ text: '' }));
-
-                hijos.push(new Docx.Paragraph({ text: 'Datos del aprendiz', heading: Docx.HeadingLevel.HEADING_2 }));
-                hijos.push(filaEtiquetaValor('Nombre', datos.campos.aprendiz_nombre));
-                hijos.push(filaEtiquetaValor('Documento', (datos.campos.aprendiz_tipo_doc || '') + ' ' + (datos.campos.aprendiz_num_doc || '')));
-                hijos.push(filaEtiquetaValor('Contacto', datos.campos.aprendiz_telefono));
-                hijos.push(filaEtiquetaValor('Correo institucional', datos.campos.aprendiz_correo_institucional));
-                hijos.push(filaEtiquetaValor('Correo personal', datos.campos.aprendiz_correo_personal));
-                hijos.push(filaEtiquetaValor('Dirección', datos.campos.aprendiz_direccion));
-                hijos.push(filaEtiquetaValor('Ficha', datos.campos.aprendiz_ficha));
-                hijos.push(filaEtiquetaValor('Programa', datos.campos.aprendiz_programa));
-
-                hijos.push(new Docx.Paragraph({ text: 'Datos del ente co-formador', heading: Docx.HeadingLevel.HEADING_2 }));
-                hijos.push(filaEtiquetaValor('Empresa', datos.campos.empresa_nombre));
-                hijos.push(filaEtiquetaValor('NIT', datos.campos.empresa_nit));
-                hijos.push(filaEtiquetaValor('Encargado', datos.campos.coformador_nombre));
-                hijos.push(filaEtiquetaValor('Cargo', datos.campos.coformador_cargo));
-
-                hijos.push(new Docx.Paragraph({ text: 'Instructor de seguimiento', heading: Docx.HeadingLevel.HEADING_2 }));
-                hijos.push(filaEtiquetaValor('Nombre', datos.campos.instructor_nombre));
-                hijos.push(filaEtiquetaValor('Correo', datos.campos.instructor_correo));
-
-                hijos.push(new Docx.Paragraph({ text: 'Alternativa de etapa productiva', heading: Docx.HeadingLevel.HEADING_2 }));
-                hijos.push(new Docx.Paragraph({ text: datos.alternativa || '' }));
-
-                hijos.push(new Docx.Paragraph({ text: 'Actividades y evidencias', heading: Docx.HeadingLevel.HEADING_2 }));
-
-                var filasTabla = [
-                    new Docx.TableRow({
-                        children: ['Descripción', 'Competencias', 'Período', 'Evidencia', 'Observaciones'].map(function (t) {
-                            return new Docx.TableCell({ children: [new Docx.Paragraph({ children: [new Docx.TextRun({ text: t, bold: true })] })] });
-                        })
-                    })
-                ];
-
-                datos.actividades.forEach(function (act, idx) {
-                    var ev = bit.evidencias[idx] || {};
-                    var celdaEvidenciaHijos = [new Docx.Paragraph({ text: ev.evidencia_texto || '' })];
-                    if (ev.evidencia_imagen) {
-                        celdaEvidenciaHijos.push(new Docx.Paragraph({
-                            children: [new Docx.ImageRun({ data: dataUrlABytes(ev.evidencia_imagen), transformation: { width: 140, height: 100 } })]
-                        }));
-                    }
-                    filasTabla.push(new Docx.TableRow({
-                        children: [
-                            new Docx.TableCell({ children: [new Docx.Paragraph({ text: act.descripcion || '' })] }),
-                            new Docx.TableCell({ children: [new Docx.Paragraph({ text: act.competencias || '' })] }),
-                            new Docx.TableCell({ children: [new Docx.Paragraph({ text: (ev.fecha_inicio || '') + ' a ' + (ev.fecha_fin || '') })] }),
-                            new Docx.TableCell({ children: celdaEvidenciaHijos }),
-                            new Docx.TableCell({ children: [new Docx.Paragraph({ text: ev.observaciones || '' })] })
-                        ]
-                    }));
-                });
-
-                hijos.push(new Docx.Table({ rows: filasTabla, width: { size: 100, type: Docx.WidthType.PERCENTAGE } }));
-                hijos.push(new Docx.Paragraph({ text: '' }));
-
-                hijos.push(new Docx.Paragraph({ text: 'Afiliación ARL', heading: Docx.HeadingLevel.HEADING_2 }));
-                hijos.push(filaEtiquetaValor('Afiliado', datos.campos.arl_afiliado));
-                hijos.push(filaEtiquetaValor('Nivel de riesgo', datos.campos.arl_nivel_riesgo));
-                hijos.push(filaEtiquetaValor('Corresponde a las actividades', datos.campos.arl_nivel_corresponde));
-                hijos.push(filaEtiquetaValor('Cuenta con EPP', datos.campos.arl_epp));
-                hijos.push(new Docx.Paragraph({ text: '' }));
-
-                hijos.push(new Docx.Paragraph({ text: 'Firmas', heading: Docx.HeadingLevel.HEADING_2 }));
-                ['firmaAprendiz', 'firmaInstructor', 'firmaCoformador'].forEach(function (prefijo) {
-                    var etiqueta = prefijo === 'firmaAprendiz' ? 'Firma del aprendiz' : (prefijo === 'firmaInstructor' ? 'Firma del instructor' : 'Firma del ente co-formador');
-                    hijos.push(new Docx.Paragraph({ children: [new Docx.TextRun({ text: etiqueta, bold: true })] }));
-                    if (datos.firmas[prefijo]) {
-                        hijos.push(new Docx.Paragraph({
-                            children: [new Docx.ImageRun({ data: dataUrlABytes(datos.firmas[prefijo]), transformation: { width: 150, height: 60 } })]
-                        }));
-                    } else {
-                        hijos.push(new Docx.Paragraph({ text: '(sin firma)' }));
-                    }
-                });
-
-                return { children: hijos };
-            });
-
-            var documento = new Docx.Document({ sections: secciones });
-
-            Docx.Packer.toBlob(documento).then(function (blob) {
-                descargarBlob(blob, 'bitacoras_' + (datos.campos.aprendiz_num_doc || 'aprendiz') + '.docx');
-            });
+            fetch('img/logo_SENA.png').then(function (r) {
+                if (!r.ok) throw new Error('no encontrado');
+                return r.blob();
+            }).then(function (blob) {
+                var reader = new FileReader();
+                reader.onload = function () { continuarConLogo(reader.result); };
+                reader.onerror = function () { continuarConLogo(null); };
+                reader.readAsDataURL(blob);
+            }).catch(function () { continuarConLogo(null); });
         }
 
         // ============================================================
         //  Botones de descarga
         // ============================================================
-        document.getElementById('btnDescargarWord').addEventListener('click', function (e) {
-            e.preventDefault();
-            var datos = validarTodoAntesDeGenerar();
-            if (!datos) return;
-            generarWord(datos);
-        });
         document.getElementById('btnDescargarPDF').addEventListener('click', function (e) {
             e.preventDefault();
             var datos = validarTodoAntesDeGenerar();
@@ -1539,7 +1495,7 @@
             var errores = validarActividades();
             if (errores.length > 0) { mostrarErrores(errores); return; }
             guardarEstado();
-            alert('Formulario válido. Usa el botón "Descargar formato" para generar las 12 bitácoras en Word, PDF o Excel.');
+            alert('Formulario válido. Usa el botón "Descargar formato" para generar las 12 bitácoras en PDF o Excel.');
         });
 
         document.getElementById('btnLimpiarFormulario').addEventListener('click', function () {
@@ -1549,12 +1505,8 @@
             }
         });
 
-        // Autoguardado ante cualquier cambio dentro del formulario (campos comunes + evidencias)
-        document.getElementById('formBitacora').addEventListener('input', guardarEstado);
-        document.getElementById('formBitacora').addEventListener('change', guardarEstado);
-
         // ============================================================
-        //  Restaurar todo lo que ya se había llenado (si viene de otra vista o recargó)
+        //  Restaurar lo ya llenado (si viene de otra vista o recargó la página)
         // ============================================================
         function restaurarEstado() {
             cargarEstadoDesdeStorage();
@@ -1570,23 +1522,8 @@
                 if (radio) radio.checked = true;
             }
 
-            // Reconstruir filas de la plantilla de actividades según lo guardado
-            var tbody = document.querySelector('#tablaActividades tbody');
-            var filasNecesarias = Math.max(3, (ESTADO.actividades || []).length);
-            while (tbody.querySelectorAll('tr').length < filasNecesarias) {
-                var nueva = tbody.querySelector('.actividad-row').cloneNode(true);
-                nueva.querySelectorAll('input, textarea').forEach(function (el) { el.value = ''; el.classList.remove('is-invalid'); });
-                tbody.appendChild(nueva);
-            }
-            var filas = tbody.querySelectorAll('tr');
-            (ESTADO.actividades || []).forEach(function (act, idx) {
-                var fila = filas[idx];
-                if (!fila) return;
-                fila.querySelector('[name="actividad_descripcion[]"]').value = act.descripcion || '';
-                fila.querySelector('[name="actividad_competencias[]"]').value = act.competencias || '';
-            });
+            renderizarActividadesIniciales(ESTADO.actividades);
 
-            // Firmas
             Object.keys(ESTADO.firmas || {}).forEach(function (prefijo) {
                 var base64 = ESTADO.firmas[prefijo];
                 if (!base64) return;
@@ -1599,8 +1536,6 @@
             });
 
             calcularPeriodo();
-            numeroActual = document.getElementById('bitacoraNumero').value;
-            renderizarEvidencias(numeroActual);
         }
 
         restaurarEstado();
