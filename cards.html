@@ -209,16 +209,32 @@
             var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
             var periodo = periodoParaNumero(fechaInicioEtapa, numero);
 
+            var totalCompetencias = (ESTADO.competencias || []).length;
+            var lista = (ESTADO.porBitacora || {})[numero] || [];
+            var actividades = [];
+            for (var i = 0; i < totalCompetencias; i++) {
+                var act = lista[i] || {};
+                actividades.push({
+                    descripcion: act.descripcion || '',
+                    competencias: ESTADO.competencias[i] || '',
+                    fecha_inicio: act.fecha_inicio || (periodo ? periodo.desde : ''),
+                    fecha_fin: act.fecha_fin || (periodo ? periodo.hasta : ''),
+                    evidencia_texto: act.evidencia_texto || '',
+                    evidencia_imagen: act.evidencia_imagen || null,
+                    observaciones: act.observaciones || ''
+                });
+            }
+
             var datos = {
                 campos: ESTADO.campos,
                 alternativa: ESTADO.alternativa,
-                actividades: ESTADO.actividades || [],
                 firmas: ESTADO.firmas || {}
             };
             var bit = {
                 numero: numero,
                 periodoDesde: periodo ? periodo.desde : '(define la fecha de inicio de la etapa en "Bitacora")',
-                periodoHasta: periodo ? periodo.hasta : ''
+                periodoHasta: periodo ? periodo.hasta : '',
+                actividades: actividades
             };
 
             hoja.innerHTML = construirHtmlBitacora(datos, bit, 'img/logo_SENA.png');

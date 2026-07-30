@@ -35,7 +35,7 @@
         }
 
         var FORM_STATE_KEY = 'bitacoraFormState';
-        var ESTADO = { campos: {}, alternativa: '', actividades: [], firmas: {} };
+        var ESTADO = { campos: {}, alternativa: '', competencias: [], porBitacora: {}, firmas: {} };
 
         function cargarEstadoDesdeStorage() {
             var raw;
@@ -45,7 +45,8 @@
                 var guardado = JSON.parse(raw);
                 ESTADO.campos = guardado.campos || {};
                 ESTADO.alternativa = guardado.alternativa || '';
-                ESTADO.actividades = guardado.actividades || [];
+                ESTADO.competencias = guardado.competencias || [];
+                ESTADO.porBitacora = guardado.porBitacora || {};
                 ESTADO.firmas = guardado.firmas || {};
             } catch (e) { /* estado corrupto, se ignora */ }
         }
@@ -82,9 +83,9 @@
             var c = datos.campos;
 
             var filasActividades = '';
-            var totalFilas = Math.max(5, datos.actividades.length);
+            var totalFilas = Math.max(5, bit.actividades.length);
             for (var i = 0; i < totalFilas; i++) {
-                var act = datos.actividades[i] || {};
+                var act = bit.actividades[i] || {};
                 var evidenciaTexto = act.evidencia_texto || (act.evidencia_imagen ? '(ver imagen adjunta)' : '');
                 filasActividades += '<tr>' +
                     celdaValor(act.descripcion, 'center') +
