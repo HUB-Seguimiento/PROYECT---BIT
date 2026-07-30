@@ -678,26 +678,6 @@
             $('#confirmarModal').modal('show');
         }
 
-        // Reemplazan alert()/confirm(): los diálogos nativos del navegador muestran
-        // siempre el origen de la página (ej. "127.0.0.1:5500 dice") por seguridad,
-        // y eso no se puede cambiar. Con un modal propio controlamos el título/estilo.
-        function mostrarAviso(mensaje, titulo) {
-            document.getElementById('avisoModalTitulo').textContent = titulo || 'Bitácora Etapa Productiva';
-            document.getElementById('avisoModalCuerpo').textContent = mensaje;
-            $('#avisoModal').modal('show');
-        }
-
-        function pedirConfirmacion(mensaje, alConfirmar) {
-            document.getElementById('confirmarModalCuerpo').textContent = mensaje;
-            var boton = document.getElementById('confirmarModalBotonAceptar');
-            var nuevoBoton = boton.cloneNode(true); // limpia listeners anteriores
-            boton.parentNode.replaceChild(nuevoBoton, boton);
-            nuevoBoton.addEventListener('click', function () {
-                $('#confirmarModal').modal('hide');
-                alConfirmar();
-            });
-            $('#confirmarModal').modal('show');
-        }
 
         // Lee del DOM los campos comunes (todo excepto actividades/alternativa/firmas) hacia ESTADO
         function leerCamposComunes() {
