@@ -244,8 +244,9 @@
                                         <label class="bitacora-required">Modalidad de ejecución de la etapa productiva</label>
                                         <select class="form-control" name="modalidad_ejecucion" required>
                                             <option value="">Seleccione...</option>
-                                            <option value="Presencial">Presencial</option>
-                                            <option value="Virtual">Virtual</option>
+                                            <option value="Mixta">Mixta</option>
+                                            <option value="Diurna">Diurna</option>
+                                            <option value="Nocturna">Nocturna</option>
                                         </select>
                                     </div>
                                     <div class="form-group col-md-4">
@@ -510,7 +511,6 @@
                                         <i class="fas fa-download"></i> Descargar formato
                                     </button>
                                     <div class="dropdown-menu" aria-labelledby="dropdownDescargar">
-                                        <a class="dropdown-item" href="#" id="btnDescargarWord"><i class="fas fa-file-word mr-2"></i>Word (.docx)</a>
                                         <a class="dropdown-item" href="#" id="btnDescargarPDF"><i class="fas fa-file-pdf mr-2"></i>PDF</a>
                                         <a class="dropdown-item" href="#" id="btnDescargarExcel"><i class="fas fa-file-excel mr-2"></i>Excel (.xlsx)</a>
                                     </div>
@@ -557,12 +557,11 @@
     <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
     <script src="js/sb-admin-2.min.js"></script>
 
-    <!-- Librerías para generar los documentos reales (Excel, PDF, Word) -->
+    <!-- Librerías para generar los documentos reales (Excel, PDF) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="https://unpkg.com/docx@7.8.2/build/index.js"></script>
 
     <script>
         // ============================================================
@@ -1025,7 +1024,7 @@
         }
 
         // ============================================================
-        //  Utilidades para imágenes (firmas y evidencias) en PDF/Word
+        //  Utilidades para imágenes (firmas y evidencias) en el PDF
         // ============================================================
         function dataUrlABytes(dataUrl) {
             var base64 = dataUrl.split(',')[1];
@@ -1156,7 +1155,7 @@
             var FILAS_BASE_ACTIVIDADES = [47, 49, 51, 53, 55];
             datos.actividades.slice(0, FILAS_BASE_ACTIVIDADES.length).forEach(function (act, idx) {
                 var fila = FILAS_BASE_ACTIVIDADES[idx];
-                var evidenciaTexto = act.evidencia_texto || (act.evidencia_imagen ? '[Imagen adjunta: ver el PDF o Word de esta bitácora]' : '');
+                var evidenciaTexto = act.evidencia_texto || (act.evidencia_imagen ? '[Imagen adjunta: ver el PDF de esta bitácora]' : '');
                 setCelda(ws, 'B' + fila, act.descripcion);
                 setCelda(ws, 'D' + fila, act.competencias);
                 setCelda(ws, 'F' + fila, act.fecha_inicio);
@@ -1170,10 +1169,10 @@
             setCelda(ws, 'G65', datos.campos.arl_nivel_corresponde);
             setCelda(ws, 'I65', datos.campos.arl_epp);
 
-            setCelda(ws, 'B73', datos.firmas.firmaAprendiz ? '[Firma adjunta: ver el PDF o Word]' : '');
+            setCelda(ws, 'B73', datos.firmas.firmaAprendiz ? '[Firma adjunta: ver el PDF]' : '');
             setCelda(ws, 'G73', datos.campos.fecha_entrega);
-            setCelda(ws, 'C77', datos.firmas.firmaInstructor ? '[Firma adjunta: ver el PDF o Word]' : '');
-            setCelda(ws, 'H77', datos.firmas.firmaCoformador ? '[Firma adjunta: ver el PDF o Word]' : '');
+            setCelda(ws, 'C77', datos.firmas.firmaInstructor ? '[Firma adjunta: ver el PDF]' : '');
+            setCelda(ws, 'H77', datos.firmas.firmaCoformador ? '[Firma adjunta: ver el PDF]' : '');
         }
 
         function generarExcel(datos) {
@@ -1423,9 +1422,8 @@
                 contenedor.style.background = '#fff';
                 document.body.appendChild(contenedor);
 
-                var doc = new jspdf.jsPDF({ unit: 'pt', format: 'letter' });
-                var pageWidth = doc.internal.pageSize.getWidth();
-                var pageHeight = doc.internal.pageSize.getHeight();
+                var ANCHO_PAGINA_PT = 612; // ancho tipo Carta, en puntos
+                var doc = null;
 
                 var indice = 0;
                 function procesarSiguiente() {
@@ -1439,14 +1437,18 @@
 
                     html2canvas(contenedor, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(function (canvas) {
                         var imgData = canvas.toDataURL('image/jpeg', 0.92);
-                        var alturaEnPdf = pageWidth * (canvas.height / canvas.width);
-                        if (indice > 0) doc.addPage();
-                        if (alturaEnPdf <= pageHeight) {
-                            doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, alturaEnPdf);
+                        // La altura de cada página se calcula a partir del contenido real
+                        // (en vez de forzar el alto fijo de una hoja Carta), así la imagen
+                        // llena exactamente el ancho de la página sin dejar franjas en blanco.
+                        var alturaPagina = ANCHO_PAGINA_PT * (canvas.height / canvas.width);
+
+                        if (!doc) {
+                            doc = new jspdf.jsPDF({ unit: 'pt', format: [ANCHO_PAGINA_PT, alturaPagina] });
                         } else {
-                            var anchoAjustado = pageHeight * (canvas.width / canvas.height);
-                            doc.addImage(imgData, 'JPEG', 0, 0, anchoAjustado, pageHeight);
+                            doc.addPage([ANCHO_PAGINA_PT, alturaPagina]);
                         }
+                        doc.addImage(imgData, 'JPEG', 0, 0, ANCHO_PAGINA_PT, alturaPagina);
+
                         indice++;
                         procesarSiguiente();
                     }).catch(function (err) {
@@ -1469,131 +1471,9 @@
             }).catch(function () { continuarConLogo(null); });
         }
 
-        function generarWord(datos) {
-            if (typeof window.docx === 'undefined') {
-                alert('No se pudo cargar la librería para generar Word (docx.js). Revisa tu conexión a internet y la consola del navegador (F12) para más detalles.');
-                return;
-            }
-
-            try {
-                var Docx = window.docx;
-
-                function filaEtiquetaValor(etiqueta, valor) {
-                    return new Docx.Paragraph({
-                        children: [
-                            new Docx.TextRun({ text: etiqueta + ': ', bold: true }),
-                            new Docx.TextRun({ text: valor || '' })
-                        ]
-                    });
-                }
-
-                var secciones = datos.bitacoras.map(function (bit) {
-                    var hijos = [];
-
-                    hijos.push(new Docx.Paragraph({ text: 'FORMATO BITÁCORA DE SEGUIMIENTO ETAPA PRODUCTIVA (GFPI-F-147)', heading: Docx.HeadingLevel.HEADING_1 }));
-                    hijos.push(new Docx.Paragraph({ text: 'Bitácora N° ' + bit.numero + ' — Período: ' + bit.periodoDesde + ' a ' + bit.periodoHasta }));
-                    hijos.push(new Docx.Paragraph({ text: '' }));
-
-                    hijos.push(new Docx.Paragraph({ text: 'Datos del aprendiz', heading: Docx.HeadingLevel.HEADING_2 }));
-                    hijos.push(filaEtiquetaValor('Nombre completo del aprendiz', datos.campos.aprendiz_nombre));
-                    hijos.push(filaEtiquetaValor('Tipo y número de documento', (datos.campos.aprendiz_tipo_doc || '') + ' ' + (datos.campos.aprendiz_num_doc || '')));
-                    hijos.push(filaEtiquetaValor('Contacto telefónico', datos.campos.aprendiz_telefono));
-                    hijos.push(filaEtiquetaValor('Correo electrónico institucional', datos.campos.aprendiz_correo_institucional));
-                    hijos.push(filaEtiquetaValor('Correo electrónico personal', datos.campos.aprendiz_correo_personal));
-                    hijos.push(filaEtiquetaValor('Dirección de residencia', datos.campos.aprendiz_direccion));
-                    hijos.push(filaEtiquetaValor('Número de grupo', datos.campos.aprendiz_ficha));
-                    hijos.push(filaEtiquetaValor('Programa de formación', datos.campos.aprendiz_programa));
-
-                    hijos.push(new Docx.Paragraph({ text: 'Datos del ente co-formador', heading: Docx.HeadingLevel.HEADING_2 }));
-                    hijos.push(filaEtiquetaValor('Nombre de la entidad', datos.campos.empresa_nombre));
-                    hijos.push(filaEtiquetaValor('NIT', datos.campos.empresa_nit));
-                    hijos.push(filaEtiquetaValor('Encargado (jefe/supervisor)', datos.campos.coformador_nombre));
-                    hijos.push(filaEtiquetaValor('Cargo', datos.campos.coformador_cargo));
-
-                    hijos.push(new Docx.Paragraph({ text: 'Instructor de seguimiento', heading: Docx.HeadingLevel.HEADING_2 }));
-                    hijos.push(filaEtiquetaValor('Nombre', datos.campos.instructor_nombre));
-                    hijos.push(filaEtiquetaValor('Correo', datos.campos.instructor_correo));
-
-                    hijos.push(new Docx.Paragraph({ text: 'Alternativa de etapa productiva', heading: Docx.HeadingLevel.HEADING_2 }));
-                    hijos.push(new Docx.Paragraph({ text: datos.alternativa || '' }));
-
-                    hijos.push(new Docx.Paragraph({ text: 'Descripción de las actividades realizadas', heading: Docx.HeadingLevel.HEADING_2 }));
-
-                    var filasTabla = [
-                        new Docx.TableRow({
-                            children: ['Descripción', 'Competencias', 'Período', 'Evidencia', 'Observaciones'].map(function (t) {
-                                return new Docx.TableCell({ children: [new Docx.Paragraph({ children: [new Docx.TextRun({ text: t, bold: true })] })] });
-                            })
-                        })
-                    ];
-
-                    datos.actividades.forEach(function (act) {
-                        var celdaEvidenciaHijos = [new Docx.Paragraph({ text: act.evidencia_texto || '' })];
-                        if (act.evidencia_imagen) {
-                            celdaEvidenciaHijos.push(new Docx.Paragraph({
-                                children: [new Docx.ImageRun({ data: dataUrlABytes(act.evidencia_imagen), transformation: { width: 140, height: 100 } })]
-                            }));
-                        }
-                        filasTabla.push(new Docx.TableRow({
-                            children: [
-                                new Docx.TableCell({ children: [new Docx.Paragraph({ text: act.descripcion || '' })] }),
-                                new Docx.TableCell({ children: [new Docx.Paragraph({ text: act.competencias || '' })] }),
-                                new Docx.TableCell({ children: [new Docx.Paragraph({ text: (act.fecha_inicio || '') + ' a ' + (act.fecha_fin || '') })] }),
-                                new Docx.TableCell({ children: celdaEvidenciaHijos }),
-                                new Docx.TableCell({ children: [new Docx.Paragraph({ text: act.observaciones || '' })] })
-                            ]
-                        }));
-                    });
-
-                    hijos.push(new Docx.Table({ rows: filasTabla, width: { size: 100, type: Docx.WidthType.PERCENTAGE } }));
-                    hijos.push(new Docx.Paragraph({ text: '' }));
-
-                    hijos.push(new Docx.Paragraph({ text: 'Información afiliación a la ARL', heading: Docx.HeadingLevel.HEADING_2 }));
-                    hijos.push(filaEtiquetaValor('Afiliado', datos.campos.arl_afiliado));
-                    hijos.push(filaEtiquetaValor('Nivel de riesgo', datos.campos.arl_nivel_riesgo));
-                    hijos.push(filaEtiquetaValor('Corresponde a las actividades', datos.campos.arl_nivel_corresponde));
-                    hijos.push(filaEtiquetaValor('Cuenta con EPP', datos.campos.arl_epp));
-                    hijos.push(new Docx.Paragraph({ text: '' }));
-
-                    hijos.push(new Docx.Paragraph({ text: 'Firmas', heading: Docx.HeadingLevel.HEADING_2 }));
-                    ['firmaAprendiz', 'firmaInstructor', 'firmaCoformador'].forEach(function (prefijo) {
-                        var etiqueta = prefijo === 'firmaAprendiz' ? 'Firma del aprendiz' : (prefijo === 'firmaInstructor' ? 'Firma del instructor' : 'Firma del ente co-formador');
-                        hijos.push(new Docx.Paragraph({ children: [new Docx.TextRun({ text: etiqueta, bold: true })] }));
-                        if (datos.firmas[prefijo]) {
-                            hijos.push(new Docx.Paragraph({
-                                children: [new Docx.ImageRun({ data: dataUrlABytes(datos.firmas[prefijo]), transformation: { width: 150, height: 60 } })]
-                            }));
-                        } else {
-                            hijos.push(new Docx.Paragraph({ text: '(sin firma)' }));
-                        }
-                    });
-
-                    return { children: hijos };
-                });
-
-                var documento = new Docx.Document({ sections: secciones });
-
-                Docx.Packer.toBlob(documento).then(function (blob) {
-                    descargarBlob(blob, construirNombreArchivo(datos) + '.docx');
-                }).catch(function (err) {
-                    console.error('Error empaquetando el Word:', err);
-                    alert('No se pudo generar el archivo Word: ' + err.message);
-                });
-            } catch (err) {
-                console.error('Error generando Word:', err);
-                alert('No se pudo generar el archivo Word: ' + err.message);
-            }
-        }
-
         // ============================================================
         //  Botones de descarga
         // ============================================================
-        document.getElementById('btnDescargarWord').addEventListener('click', function (e) {
-            e.preventDefault();
-            var datos = validarTodoAntesDeGenerar();
-            if (!datos) return;
-            generarWord(datos);
-        });
         document.getElementById('btnDescargarPDF').addEventListener('click', function (e) {
             e.preventDefault();
             var datos = validarTodoAntesDeGenerar();
@@ -1615,7 +1495,7 @@
             var errores = validarActividades();
             if (errores.length > 0) { mostrarErrores(errores); return; }
             guardarEstado();
-            alert('Formulario válido. Usa el botón "Descargar formato" para generar las 12 bitácoras en Word, PDF o Excel.');
+            alert('Formulario válido. Usa el botón "Descargar formato" para generar las 12 bitácoras en PDF o Excel.');
         });
 
         document.getElementById('btnLimpiarFormulario').addEventListener('click', function () {
