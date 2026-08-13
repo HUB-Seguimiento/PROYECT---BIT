@@ -85,26 +85,30 @@
                 COLGROUP_8 + contenidoFilas + '</table>';
         }
 
+        var ESTILO_ANTI_DESBORDE = 'word-break:break-word;overflow-wrap:anywhere;';
         function barraNegra(texto) {
-            return '<div style="background:#000;color:#fff;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:9px;">' + escapeHtml(texto) + '</div>';
+            return '<div style="background:#000;color:#fff;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:9px;' + ESTILO_ANTI_DESBORDE + '">' + escapeHtml(texto) + '</div>';
         }
         function barraGris(texto) {
-            return '<div style="background:#595959;color:#fff;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:8.5px;">' + escapeHtml(texto) + '</div>';
+            return '<div style="background:#595959;color:#fff;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:8.5px;' + ESTILO_ANTI_DESBORDE + '">' + escapeHtml(texto) + '</div>';
         }
         function barraBlanca(texto) {
-            return '<div style="background:#fff;color:#000;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:9px;">' + escapeHtml(texto) + '</div>';
+            return '<div style="background:#fff;color:#000;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:9px;' + ESTILO_ANTI_DESBORDE + '">' + escapeHtml(texto) + '</div>';
         }
         function celdaEtiqueta(texto, colspan, rowspan) {
-            return '<td colspan="' + (colspan || 1) + '"' + (rowspan ? ' rowspan="' + rowspan + '"' : '') + ' style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px 3px;">' + escapeHtml(texto) + '</td>';
+            return '<td colspan="' + (colspan || 1) + '"' + (rowspan ? ' rowspan="' + rowspan + '"' : '') + ' style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px 3px;' + ESTILO_ANTI_DESBORDE + '">' + escapeHtml(texto) + '</td>';
         }
         function celdaEtiquetaOscura(texto, colspan) {
-            return '<td colspan="' + (colspan || 1) + '" style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px 3px;">' + escapeHtml(texto) + '</td>';
+            return '<td colspan="' + (colspan || 1) + '" style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px 3px;' + ESTILO_ANTI_DESBORDE + '">' + escapeHtml(texto) + '</td>';
+        }
+        function celdaEncabezadoActividad(html, colspan) {
+            return '<td colspan="' + (colspan || 1) + '" style="border:1px solid #000;background:#595959;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:3px 4px;line-height:1.35;' + ESTILO_ANTI_DESBORDE + '">' + html + '</td>';
         }
         function celdaValor(texto, alinear, colspan, rowspan) {
-            return '<td colspan="' + (colspan || 1) + '"' + (rowspan ? ' rowspan="' + rowspan + '"' : '') + ' style="border:1px solid #000;text-align:' + (alinear || 'left') + ';font-size:8px;padding:3px 4px;">' + escapeHtml(texto || '') + '</td>';
+            return '<td colspan="' + (colspan || 1) + '"' + (rowspan ? ' rowspan="' + rowspan + '"' : '') + ' style="border:1px solid #000;text-align:' + (alinear || 'left') + ';font-size:8px;padding:3px 4px;' + ESTILO_ANTI_DESBORDE + '">' + escapeHtml(texto || '') + '</td>';
         }
         function celdaLibre(contenidoHtml, colspan, rowspan, extraEstilo) {
-            return '<td colspan="' + (colspan || 1) + '"' + (rowspan ? ' rowspan="' + rowspan + '"' : '') + ' style="border:1px solid #000;text-align:center;padding:3px;' + (extraEstilo || '') + '">' + contenidoHtml + '</td>';
+            return '<td colspan="' + (colspan || 1) + '"' + (rowspan ? ' rowspan="' + rowspan + '"' : '') + ' style="border:1px solid #000;text-align:center;padding:3px;' + ESTILO_ANTI_DESBORDE + (extraEstilo || '') + '">' + contenidoHtml + '</td>';
         }
         function casilla(marcada) {
             return '<div style="width:9px;height:9px;border:1px solid #000;margin:0 auto;background:' + (marcada ? '#000' : '#fff') + ';"></div>';
@@ -117,13 +121,19 @@
             var totalFilas = Math.max(5, bit.actividades.length);
             for (var i = 0; i < totalFilas; i++) {
                 var act = bit.actividades[i] || {};
-                var evidenciaTexto = act.evidencia_texto || (act.evidencia_imagen ? '(ver imagen adjunta)' : '');
+                var contenidoEvidencia = '';
+                if (act.evidencia_texto) {
+                    contenidoEvidencia += '<div>' + escapeHtml(act.evidencia_texto) + '</div>';
+                }
+                if (act.evidencia_imagen) {
+                    contenidoEvidencia += '<img src="' + act.evidencia_imagen + '" style="max-width:100%;max-height:90px;margin-top:' + (act.evidencia_texto ? '3px' : '0') + ';">';
+                }
                 filasActividades += '<tr>' +
                     celdaValor(act.descripcion, 'center', 2) +
                     celdaValor(act.competencias, 'center', 2) +
                     celdaValor(act.fecha_inicio, 'center', 1) +
                     celdaValor(act.fecha_fin, 'center', 1) +
-                    celdaValor(evidenciaTexto, 'center', 1) +
+                    celdaLibre(contenidoEvidencia, 1) +
                     celdaValor(act.observaciones, 'center', 1) +
                     '</tr>';
             }
@@ -251,12 +261,12 @@
                 // Descripción (B-C) / Competencias (D-E) / F.inicio (F) / F.fin (G) / Evidencia (H) / Observaciones (I)
                 tablaGrid(
                     '<tr>' +
-                    celdaEtiquetaOscura('DESCRIPCIÓN DE LA ACTIVIDAD', 2) +
-                    celdaEtiquetaOscura('Competencias del programa de formación aplicadas en el desarrollo de la actividad', 2) +
-                    celdaEtiquetaOscura('FECHA DE INICIO', 1) +
-                    celdaEtiquetaOscura('FECHA DE FIN', 1) +
-                    celdaEtiquetaOscura('EVIDENCIA DE CUMPLIMIENTO', 1) +
-                    celdaEtiquetaOscura('OBSERVACIONES, INASISTENCIAS, DIFICULTADES', 1) +
+                    celdaEncabezadoActividad('<div>Descripción de la actividad</div><div style="font-weight:normal;font-style:italic;font-size:6.5px;">(Ingrese cuantas filas sean necesarias)</div>', 2) +
+                    celdaEncabezadoActividad('Competencias del programa de formación aplicadas en el desarrollo de la actividad', 2) +
+                    celdaEncabezadoActividad('<div>Fecha de inicio</div><div style="font-weight:normal;font-size:6.5px;">(dd/mm/aa)</div>', 1) +
+                    celdaEncabezadoActividad('<div>Fecha de fin</div><div style="font-weight:normal;font-size:6.5px;">(dd/mm/aa)</div>', 1) +
+                    celdaEncabezadoActividad('<div>Evidencia de cumplimiento</div><div style="font-weight:normal;font-style:italic;font-size:6.5px;">(Indique si corresponde a un documento, proceso, producto, entregable u otro)</div><div style="font-weight:normal;font-size:6.5px;">En anexo puede fortalecer la evidencia si es el caso.</div>', 1) +
+                    celdaEncabezadoActividad('Observaciones, inasistencias, dificultades presentadas, y/o comentarios realizados por el aprendiz y/o jefe inmediato', 1) +
                     '</tr>' +
                     filasActividades
                 ) +
@@ -267,37 +277,58 @@
                 escapeHtml(TEXTO_ARTICULO_11) + '<br>' + escapeHtml(TEXTO_OBLIGACION_1) + '<br>' + escapeHtml(TEXTO_OBLIGACION_2) +
                 '</div>' +
 
-                // ARL: ¿afiliado? (B-C) / nivel riesgo (D-E) / ¿corresponde? (F-G) / ¿EPP? (H-I)
+                // ARL — igual a la estructura real del Excel:
+                // B=¿afiliado? | C:D=nivel riesgo | E:F(2 filas)=¿corresponde? | G=valor corresponde
+                // H(2 filas)=¿EPP? | I=valor EPP
                 tablaGrid(
                     '<tr>' +
-                    celdaEtiqueta('¿La persona con rol de aprendiz se encuentra afiliado a la ARL?', 2) +
+                    celdaEtiqueta('¿El aprendiz se encuentra afiliado a la ARL?', 1) +
                     celdaEtiqueta('Indique el nivel de riesgo actual', 2) +
-                    celdaEtiqueta('¿El nivel de riesgo corresponde a las actividades que desarrolla en la empresa?', 2) +
-                    celdaEtiqueta('¿Cuenta con los elementos de protección personal (EPP) requeridos?', 2) +
+                    celdaEtiqueta('¿El nivel de riesgo de la ARL corresponde a las actividades que desarrolla el aprendiz en la empresa?', 2, 2) +
+                    celdaValor(c.arl_nivel_corresponde, 'center', 1) +
+                    celdaEtiqueta('¿El aprendiz cuenta con los elementos de protección personal (EPP), requeridos para desarrollar su etapa productiva?', 1, 2) +
+                    celdaValor(c.arl_epp, 'center', 1) +
                     '</tr>' +
-                    '<tr>' + celdaValor(c.arl_afiliado, 'center', 2) + celdaValor(c.arl_nivel_riesgo, 'center', 2) + celdaValor(c.arl_nivel_corresponde, 'center', 2) + celdaValor(c.arl_epp, 'center', 2) + '</tr>'
+                    '<tr>' +
+                    celdaValor(c.arl_afiliado, 'center', 1) +
+                    celdaValor(c.arl_nivel_riesgo, 'center', 2) +
+                    '<td style="border:1px solid #000;"></td>' +
+                    '<td style="border:1px solid #000;"></td>' +
+                    '</tr>'
                 ) +
+
+                '<div style="text-align:center;font-size:7.5px;font-style:italic;padding:4px 2px;"><strong>Aprendiz:</strong> recuerde diligenciar completamente el formato de bitácora y entregarlo o cargarlo al espacio asignado para este</div>' +
 
                 // Firmas: Aprendiz + Fecha (B-E / F-I), Instructor + Co-formador (B-E / F-I)
                 tablaGrid(
                     '<tr>' +
-                    celdaLibre(bloqueFirma(datos.firmas.firmaAprendiz), 4, 1, 'height:50px;border-bottom:0;') +
-                    celdaLibre(escapeHtml(c.fecha_entrega || ''), 4, 1, 'border-bottom:0;') +
+                    celdaLibre(bloqueFirma(datos.firmas.firmaAprendiz), 4, 1, 'height:50px;border:0;vertical-align:bottom;') +
+                    celdaLibre(escapeHtml(c.fecha_entrega || ''), 4, 1, 'border:0;vertical-align:bottom;') +
                     '</tr>' +
                     '<tr>' +
-                    celdaLibre('Firma de la persona con rol de aprendiz', 4, 1, 'border-top:0;font-size:7.5px;') +
-                    celdaLibre('Fecha entrega bitácora', 4, 1, 'border-top:0;font-size:7.5px;') +
+                    celdaLibre('Firma de la persona con rol de aprendiz', 4, 1, 'border:0;border-top:1px solid #000;font-size:7.5px;') +
+                    celdaLibre('Fecha entrega bitácora', 4, 1, 'border:0;border-top:1px solid #000;font-size:7.5px;') +
+                    '</tr>' +
+                    '<tr><td colspan="8" style="border:0;height:10px;"></td></tr>' +
+                    '<tr>' +
+                    celdaLibre(bloqueFirma(datos.firmas.firmaInstructor), 4, 1, 'height:50px;border:0;vertical-align:bottom;') +
+                    celdaLibre(bloqueFirma(datos.firmas.firmaCoformador), 4, 1, 'border:0;vertical-align:bottom;') +
                     '</tr>' +
                     '<tr>' +
-                    celdaLibre(bloqueFirma(datos.firmas.firmaInstructor), 4, 1, 'height:50px;border-bottom:0;') +
-                    celdaLibre(bloqueFirma(datos.firmas.firmaCoformador), 4, 1, 'border-bottom:0;') +
-                    '</tr>' +
-                    '<tr>' +
-                    celdaLibre('Firma del instructor de seguimiento', 4, 1, 'border-top:0;font-size:7.5px;') +
-                    celdaLibre('Firma de la persona con rol de jefe inmediato', 4, 1, 'border-top:0;font-size:7.5px;') +
+                    celdaLibre('Firma del instructor de seguimiento', 4, 1, 'border:0;border-top:1px solid #000;font-size:7.5px;') +
+                    celdaLibre('Firma del ente co-formador', 4, 1, 'border:0;border-top:1px solid #000;font-size:7.5px;') +
                     '</tr>',
                     false
                 ) +
+
+                '<div style="font-size:7px;padding:4px 2px 2px 2px;">' +
+                '<strong>Nota:</strong> Con el diligenciamiento de este formato autorizo al SENA para la recolección y tratamiento de mis datos personales, ' +
+                'conforme a la política de datos personales de la entidad GOR-POL-006. Entiendo que los datos serán objeto de recolección, almacenamiento, ' +
+                'uso, circulación, supresión, transferencia, transmisión, cesión y todo el tratamiento, realizados por el SENA.' +
+                '</div>' +
+
+                '<div style="background:#000;color:#fff;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:8px;margin-top:6px;">Anexo: Es opcional relacionar evidencia fotográfica de las actividades desarrolladas</div>' +
+                '<div style="background:#808080;color:#fff;text-align:center;padding:2px 4px;border:1px solid #000;font-size:7.5px;">(No aplica documentos de la empresa u otros aspectos sensibles)</div>' +
 
                 '</div>';
         }

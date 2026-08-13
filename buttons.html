@@ -402,6 +402,18 @@
                                 <div id="alertaSinBitacoraActividades" class="alert alert-info d-none">
                                     Selecciona primero la fecha de inicio de la etapa y el número de bitácora en el "Encabezado" para habilitar esta sección.
                                 </div>
+                                <div id="controlObservacionesWrapper" class="form-group mb-3 d-none">
+                                    <label class="d-block mb-1 font-weight-bold">¿Hay observaciones para esta bitácora?</label>
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" id="hayObsSi" name="hay_observaciones" class="custom-control-input" value="si" checked>
+                                        <label class="custom-control-label" for="hayObsSi">Sí</label>
+                                    </div>
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" id="hayObsNo" name="hay_observaciones" class="custom-control-input" value="no">
+                                        <label class="custom-control-label" for="hayObsNo">No</label>
+                                    </div>
+                                    <small class="d-block text-muted mt-1">Si eliges "No", todas las observaciones de esta bitácora se llenan solas con "N/A".</small>
+                                </div>
                                 <div id="contenedorActividadesPorBitacora"></div>
                             </div>
                         </div>
@@ -877,16 +889,19 @@
             var contenedor = document.getElementById('contenedorActividadesPorBitacora');
             var alerta = document.getElementById('alertaSinBitacoraActividades');
             var tituloNumero = document.getElementById('numeroBitacoraActividades');
+            var controlObs = document.getElementById('controlObservacionesWrapper');
             var periodoDesde = document.getElementById('periodoDesde').value;
             var periodoHasta = document.getElementById('periodoHasta').value;
 
             if (!numero || !periodoDesde || !periodoHasta) {
                 contenedor.innerHTML = '';
                 alerta.classList.remove('d-none');
+                controlObs.classList.add('d-none');
                 tituloNumero.textContent = '-';
                 return;
             }
             alerta.classList.add('d-none');
+            controlObs.classList.remove('d-none');
             tituloNumero.textContent = numero;
 
             var totalCompetencias = contarCompetencias();
@@ -941,7 +956,52 @@
                     guardarEstado();
                 });
             });
+
+            sincronizarControlObservaciones();
         }
+
+        // "N/A" con el que se llenan las observaciones cuando el usuario dice que no hay ninguna
+        // (se eligió "N/A" para que sea consistente con el mismo estilo que ya usa este formato
+        // en el campo de EPP de la sección ARL).
+        var TEXTO_SIN_OBSERVACIONES = 'N/A';
+
+        function aplicarNoHayObservaciones() {
+            document.querySelectorAll('#contenedorActividadesPorBitacora .act-observaciones').forEach(function (ta) {
+                ta.value = TEXTO_SIN_OBSERVACIONES;
+                ta.readOnly = true;
+                ta.classList.add('bg-light');
+            });
+        }
+
+        function aplicarSiHayObservaciones() {
+            document.querySelectorAll('#contenedorActividadesPorBitacora .act-observaciones').forEach(function (ta) {
+                ta.readOnly = false;
+                ta.classList.remove('bg-light');
+                if (ta.value === TEXTO_SIN_OBSERVACIONES) ta.value = '';
+            });
+        }
+
+        // Después de renderizar las actividades de una bitácora, refleja en el interruptor
+        // Sí/No lo que ya había guardado (si TODAS las observaciones son "N/A", marca "No").
+        function sincronizarControlObservaciones() {
+            var textareas = document.querySelectorAll('#contenedorActividadesPorBitacora .act-observaciones');
+            if (textareas.length === 0) return;
+            var todasNA = Array.from(textareas).every(function (ta) { return ta.value.trim() === TEXTO_SIN_OBSERVACIONES; });
+            if (todasNA) {
+                document.getElementById('hayObsNo').checked = true;
+                aplicarNoHayObservaciones();
+            } else {
+                document.getElementById('hayObsSi').checked = true;
+                aplicarSiHayObservaciones();
+            }
+        }
+
+        document.getElementById('hayObsSi').addEventListener('change', function () {
+            if (this.checked) { aplicarSiHayObservaciones(); guardarEstado(); }
+        });
+        document.getElementById('hayObsNo').addEventListener('change', function () {
+            if (this.checked) { aplicarNoHayObservaciones(); guardarEstado(); }
+        });
 
         // Autoguardado ante cualquier cambio dentro del formulario (campos comunes + competencias + actividades)
         document.getElementById('formBitacora').addEventListener('input', guardarEstado);
