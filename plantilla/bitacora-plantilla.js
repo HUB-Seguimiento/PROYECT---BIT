@@ -88,6 +88,9 @@
         function barraNegra(texto) {
             return '<div style="background:#000;color:#fff;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:9px;">' + escapeHtml(texto) + '</div>';
         }
+        function barraGris(texto) {
+            return '<div style="background:#595959;color:#fff;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:8.5px;">' + escapeHtml(texto) + '</div>';
+        }
         function barraBlanca(texto) {
             return '<div style="background:#fff;color:#000;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:9px;">' + escapeHtml(texto) + '</div>';
         }
@@ -142,16 +145,21 @@
             return '' +
                 '<div style="width:780px;padding:14px;font-family:Arial,Helvetica,sans-serif;color:#000;font-size:8px;">' +
 
-                // Encabezado: logo (columnas B-H) + Código/Versión (columna I)
+                // Encabezado: logo (columnas B-H) + Código/Versión (columna I).
+                // El logo se centra respecto al ANCHO TOTAL de la página (no solo su celda),
+                // para que quede alineado con el centro de la barra "PROCESO" de abajo.
+                '<div style="position:relative;">' +
                 tablaGrid(
                     '<tr>' +
-                    celdaLibre(logoDataUrl ? '<img src="' + logoDataUrl + '" style="height:38px;">' : '', 7) +
+                    celdaLibre('', 7, 1, 'height:52px;') +
                     '<td style="border:1px solid #000;padding:0;">' +
                     '<div style="border-bottom:1px solid #000;padding:3px;font-size:8px;">Código: GFPI-F-147</div>' +
                     '<div style="padding:3px;font-size:8px;">Versión: 05</div>' +
                     '</td>' +
                     '</tr>'
                 ) +
+                (logoDataUrl ? '<img src="' + logoDataUrl + '" style="position:absolute;top:6px;left:50%;transform:translateX(-50%);height:40px;">' : '') +
+                '</div>' +
 
                 barraNegra('PROCESO') +
                 barraBlanca('GESTIÓN DE FORMACIÓN PROFESIONAL INTEGRAL') +
@@ -179,7 +187,7 @@
                     '</tr>'
                 ) +
 
-                barraNegra('Datos del aprendiz') +
+                barraGris('Datos del aprendiz') +
                 tablaGrid(
                     // Nombre (B-D) / Tipo doc (E) / N° identificación (F-G) / Teléfono (H-I)
                     '<tr>' + celdaEtiqueta('NOMBRE DEL APRENDIZ', 3) + celdaEtiqueta('TIPO DE DOCUMENTO', 1) + celdaEtiqueta('NUMERO DE IDENTIFICACION', 2) + celdaEtiqueta('TELEFONO', 2) + '</tr>' +
@@ -199,21 +207,21 @@
                     '<tr>' + celdaValor(c.modalidad_ejecucion, 'center', 3) + celdaValor(c.etapa_exterior, 'center', 3) + celdaValor(c.etapa_pais, 'center', 2) + '</tr>'
                 ) +
 
-                barraNegra('Datos del ente co-formador') +
+                barraGris('Datos del ente co-formador') +
                 tablaGrid(
                     // Empresa (B-E) / NIT (F-G) / Dirección (H-I)
                     '<tr>' + celdaEtiqueta('Nombre de la entidad, empresa, institución u organización', 4) + celdaEtiqueta('NIT', 2) + celdaEtiqueta('Dirección', 2) + '</tr>' +
                     '<tr>' + celdaValor(c.empresa_nombre, 'center', 4) + celdaValor(c.empresa_nit, 'center', 2) + celdaValor(c.empresa_direccion, 'center', 2) + '</tr>'
                 ) +
 
-                barraNegra('Datos de la persona encargada del proceso formativo del aprendiz en la entidad co-formadora') +
+                barraGris('Datos de la persona encargada del proceso formativo del aprendiz en la entidad co-formadora') +
                 tablaGrid(
                     // Nombre (B-D) / Cargo (E-F) / Teléfono (G) / Correo (H-I)
                     '<tr>' + celdaEtiqueta('Nombre completo del ente co-formador (Jefe inmediato/Supervisor)', 3) + celdaEtiqueta('Cargo del ente co-formador', 2) + celdaEtiqueta('Contacto telefónico', 1) + celdaEtiqueta('Correo electrónico', 2) + '</tr>' +
                     '<tr>' + celdaValor(c.coformador_nombre, 'center', 3) + celdaValor(c.coformador_cargo, 'center', 2) + celdaValor(c.coformador_telefono, 'center', 1) + celdaValor(c.coformador_correo, 'center', 2) + '</tr>'
                 ) +
 
-                barraNegra('Datos del instructor de seguimiento') +
+                barraGris('Datos del instructor de seguimiento') +
                 tablaGrid(
                     // Nombre (B-F) / Correo (G-I)
                     '<tr>' + celdaEtiqueta('Nombre completo del instructor de seguimiento', 5) + celdaEtiqueta('Correo electrónico del instructor de seguimiento', 3) + '</tr>' +
@@ -237,6 +245,8 @@
                     celdaValor('Vínculo laboral', 'left', 1) + celdaLibre('<strong>' + xSi('altLaboral') + '</strong>', 2) +
                     '</tr>'
                 ) +
+
+                barraGris('Descripción de las actividades realizadas') +
 
                 // Descripción (B-C) / Competencias (D-E) / F.inicio (F) / F.fin (G) / Evidencia (H) / Observaciones (I)
                 tablaGrid(
