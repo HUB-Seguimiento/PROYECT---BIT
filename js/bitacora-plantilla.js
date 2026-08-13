@@ -24,6 +24,14 @@
             return new Date(Date.UTC(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10)));
         }
 
+        // Convierte una fecha en formato "yyyy-mm-dd" (como vienen los <input type="date">) a "dd/mm/yyyy"
+        function formatearFechaDDMMYYYY(str) {
+            if (!str) return '';
+            var partes = str.split('-');
+            if (partes.length !== 3) return str;
+            return partes[2] + '/' + partes[1] + '/' + partes[0];
+        }
+
         function periodoParaNumero(fechaInicioStr, numero) {
             if (!fechaInicioStr || !numero) return null;
             var inicioEtapa = parseFechaInput(fechaInicioStr);
@@ -143,17 +151,29 @@
 
                 '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
                 '<tr>' + celdaEtiqueta('Bitácoras N°') + '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;" colspan="2">PERÍODO A REPORTAR</td></tr>' +
-                '<tr>' + celdaValor(bit.numero, 'center') + celdaValor(bit.periodoDesde, 'center') + celdaValor(bit.periodoHasta, 'center') + '</tr>' +
+                '<tr>' + celdaValor(bit.numero, 'center') + '<td style="border:1px solid #000;text-align:center;font-size:8px;padding:3px;" colspan="2">Desde <strong>' + escapeHtml(formatearFechaDDMMYYYY(bit.periodoDesde)) + '</strong> hasta <strong>' + escapeHtml(formatearFechaDDMMYYYY(bit.periodoHasta)) + '</strong></td></tr>' +
                 '</table>' +
 
                 barraNegra('Datos del aprendiz') +
                 '<table style="width:100%;border-collapse:collapse;">' +
                 '<tr>' + celdaEtiqueta('NOMBRE DEL APRENDIZ') + celdaEtiqueta('TIPO DE DOCUMENTO') + celdaEtiqueta('NUMERO DE IDENTIFICACION') + celdaEtiqueta('TELEFONO') + '</tr>' +
                 '<tr>' + celdaValor(c.aprendiz_nombre, 'center') + celdaValor(c.aprendiz_tipo_doc, 'center') + celdaValor(c.aprendiz_num_doc, 'center') + celdaValor(c.aprendiz_telefono, 'center') + '</tr>' +
-                '<tr>' + celdaEtiqueta('Correo electrónico institucional') + celdaEtiqueta('Correo electrónico personal') + celdaEtiqueta('Direccion Residencial') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
-                '<tr>' + celdaValor(c.aprendiz_correo_institucional, 'center') + celdaValor(c.aprendiz_correo_personal, 'center') + celdaValor(c.aprendiz_direccion, 'center') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
-                '<tr>' + celdaEtiqueta('Numero de Grupo') + celdaEtiqueta('Modalidad') + celdaEtiqueta('Programa de Formacion') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
-                '<tr>' + celdaValor(c.aprendiz_ficha, 'center') + celdaValor(c.aprendiz_modalidad_formacion, 'center') + celdaValor(c.aprendiz_programa, 'center') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
+                '</table>' +
+                '<table style="width:100%;border-collapse:collapse;">' +
+                '<tr>' + celdaEtiqueta('Correo electrónico institucional') + celdaEtiqueta('Correo electrónico personal') + celdaEtiqueta('Direccion Residencial') + '</tr>' +
+                '<tr>' + celdaValor(c.aprendiz_correo_institucional, 'center') + celdaValor(c.aprendiz_correo_personal, 'center') + celdaValor(c.aprendiz_direccion, 'center') + '</tr>' +
+                '</table>' +
+                '<table style="width:100%;border-collapse:collapse;">' +
+                '<tr>' + celdaEtiqueta('Numero de Grupo') + celdaEtiqueta('Modalidad') + celdaEtiqueta('Programa de Formacion') + '</tr>' +
+                '<tr>' + celdaValor(c.aprendiz_ficha, 'center') + celdaValor(c.aprendiz_modalidad_formacion, 'center') + celdaValor(c.aprendiz_programa, 'center') + '</tr>' +
+                '</table>' +
+                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
+                '<tr>' +
+                celdaEtiqueta('Modalidad de ejecución de la etapa productiva (presencial o virtual)') +
+                celdaEtiqueta('¿Realiza la etapa productiva con una entidad u organización en el exterior? (si o no)') +
+                celdaEtiqueta('País donde realiza la etapa productiva') +
+                '</tr>' +
+                '<tr>' + celdaValor(c.modalidad_ejecucion, 'center') + celdaValor(c.etapa_exterior, 'center') + celdaValor(c.etapa_pais, 'center') + '</tr>' +
                 '</table>' +
 
                 barraNegra('Datos del ente co-formador') +

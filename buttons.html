@@ -369,22 +369,40 @@
                             </div>
                         </div>
 
-                        <!-- Descripción de actividades, evidencias y observaciones -->
-                        <!-- IMPORTANTE: esto se llena UNA SOLA VEZ y es igual para las 12 bitácoras. -->
+                        <!-- Competencias del programa de formación (una sola vez, NO cambian entre bitácoras) -->
                         <div class="card shadow mb-4">
                             <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                                <h6 class="m-0 font-weight-bold text-primary">Actividades, evidencias y observaciones (una sola vez, igual en las 12 bitácoras)</h6>
-                                <button type="button" class="btn btn-sm btn-success no-print" id="btnAddActividad">
-                                    <i class="fas fa-plus"></i> Agregar actividad
+                                <h6 class="m-0 font-weight-bold text-primary">Competencias del programa de formación (una sola vez, igual en las 12 bitácoras)</h6>
+                                <button type="button" class="btn btn-sm btn-success no-print" id="btnAddCompetencia">
+                                    <i class="fas fa-plus"></i> Agregar competencia
                                 </button>
                             </div>
                             <div class="card-body">
                                 <p class="text-muted small">
-                                    Mínimo 3 actividades, cada una con descripción y competencias diferentes entre sí (no se pueden repetir).
-                                    Todo esto se llena <strong>una sola vez</strong> y aplica igual a las 12 bitácoras — no hay que repetirlo.
-                                    La evidencia puede ser texto, imagen, o ambas (se exige al menos una de las dos). Las observaciones son opcionales.
+                                    Mínimo 3 competencias, diferentes entre sí (no se pueden repetir). Estas vienen del programa de formación y
+                                    <strong>no cambian</strong> con el tiempo, así que se llenan <strong>una sola vez</strong> para las 12 bitácoras.
                                 </p>
-                                <div id="contenedorActividades"></div>
+                                <div id="contenedorCompetencias"></div>
+                            </div>
+                        </div>
+
+                        <!-- Descripción de actividades, evidencias y observaciones — ESTO SÍ CAMBIA por bitácora -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary" id="tituloActividadesBitacora">
+                                    Descripción de actividades, evidencias y observaciones — Bitácora N° <span id="numeroBitacoraActividades">-</span>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small">
+                                    A diferencia de las competencias, esto <strong>sí cambia en cada una de las 12 bitácoras</strong> según lo que el
+                                    aprendiz esté haciendo en ese momento. Cambia el número de bitácora en el "Encabezado" para diligenciar cada una.
+                                    La evidencia puede ser texto, imagen, o ambas (se exige al menos una). Las observaciones son opcionales.
+                                </p>
+                                <div id="alertaSinBitacoraActividades" class="alert alert-info d-none">
+                                    Selecciona primero la fecha de inicio de la etapa y el número de bitácora en el "Encabezado" para habilitar esta sección.
+                                </div>
+                                <div id="contenedorActividadesPorBitacora"></div>
                             </div>
                         </div>
 
@@ -634,18 +652,33 @@
             }
         }
 
-        document.getElementById('fechaInicioEtapa').addEventListener('change', calcularPeriodo);
-        document.getElementById('bitacoraNumero').addEventListener('change', calcularPeriodo);
+        document.getElementById('bitacoraNumero').addEventListener('change', function () {
+            if (numeroActual) {
+                leerActividadesBitacoraActual(numeroActual);
+                persistirEstado();
+            }
+            calcularPeriodo();
+            numeroActual = document.getElementById('bitacoraNumero').value;
+            renderizarActividadesPorBitacora(numeroActual);
+        });
+
+        document.getElementById('fechaInicioEtapa').addEventListener('change', function () {
+            calcularPeriodo();
+            renderizarActividadesPorBitacora(numeroActual);
+        });
 
         // ============================================================
-        //  Modelo de datos (todo se llena UNA SOLA VEZ y aplica a las 12 bitácoras):
-        //  - ESTADO.campos       -> datos personales/empresa/instructor/ARL/etc.
-        //  - ESTADO.alternativa  -> alternativa de etapa productiva
-        //  - ESTADO.actividades  -> [{descripcion, competencias, fecha_inicio, fecha_fin,
-        //                             evidencia_texto, evidencia_imagen, observaciones}]
-        //  - ESTADO.firmas       -> firmas en base64
+        //  Modelo de datos híbrido:
+        //  - ESTADO.campos       -> datos personales/empresa/instructor/ARL/etc. (una sola vez)
+        //  - ESTADO.alternativa  -> alternativa de etapa productiva (una sola vez)
+        //  - ESTADO.competencias -> [texto, texto, ...] — vienen del programa de formación,
+        //                            NO cambian con el tiempo: se llenan una sola vez.
+        //  - ESTADO.porBitacora  -> { "1": [{descripcion, fecha_inicio, fecha_fin,
+        //                             evidencia_texto, evidencia_imagen, observaciones}], "2": [...] }
+        //                            ESTO SÍ cambia según lo que el aprendiz esté haciendo.
+        //  - ESTADO.firmas       -> firmas en base64 (una sola vez)
         // ============================================================
-
+        var numeroActual = '';
 
         function persistirEstado() {
             try { sessionStorage.setItem(FORM_STATE_KEY, JSON.stringify(ESTADO)); }
@@ -655,7 +688,6 @@
         function limpiarEstadoGuardado() {
             try { sessionStorage.removeItem(FORM_STATE_KEY); } catch (e) { /* noop */ }
         }
-
 
         // Reemplazan alert()/confirm(): los diálogos nativos del navegador muestran
         // siempre el origen de la página (ej. "127.0.0.1:5500 dice") por seguridad,
@@ -678,8 +710,7 @@
             $('#confirmarModal').modal('show');
         }
 
-
-        // Lee del DOM los campos comunes (todo excepto actividades/alternativa/firmas) hacia ESTADO
+        // Lee del DOM los campos comunes (todo excepto competencias/actividades/alternativa/firmas)
         function leerCamposComunes() {
             var form = document.getElementById('formBitacora');
             ESTADO.campos = {};
@@ -688,7 +719,6 @@
                 if (el.name.indexOf('[]') !== -1) return;
                 if (el.name === 'alternativa') return;
                 if (el.type === 'file') return;
-                if (el.name.indexOf('act_') === 0) return;
                 ESTADO.campos[el.name] = el.value;
             });
 
@@ -701,15 +731,24 @@
             });
         }
 
-        // Lee del DOM la lista de actividades (con sus evidencias) hacia ESTADO.actividades
-        function leerActividades() {
-            var bloques = document.querySelectorAll('#contenedorActividades .actividad-bloque');
+        // Lee del DOM la lista de competencias (compartidas) hacia ESTADO.competencias
+        function leerCompetencias() {
+            var bloques = document.querySelectorAll('#contenedorCompetencias .competencia-bloque');
+            ESTADO.competencias = Array.from(bloques).map(function (b) { return b.querySelector('.competencia-texto').value; });
+        }
+
+        // Lee del DOM las actividades (descripción/fechas/evidencia/observaciones) de LA BITÁCORA
+        // que se está viendo, y las guarda en ESTADO.porBitacora[numero]
+        function leerActividadesBitacoraActual(numero) {
+            if (!numero) return;
+            var contenedor = document.getElementById('contenedorActividadesPorBitacora');
+            var bloques = contenedor.querySelectorAll('.actividad-bloque');
+            if (bloques.length === 0) return;
             var lista = [];
             bloques.forEach(function (bloque) {
                 var imgPreview = bloque.querySelector('.act-evidencia-imagen-preview');
                 lista.push({
                     descripcion: bloque.querySelector('.act-descripcion').value,
-                    competencias: bloque.querySelector('.act-competencias').value,
                     fecha_inicio: bloque.querySelector('.act-fecha-inicio').value,
                     fecha_fin: bloque.querySelector('.act-fecha-fin').value,
                     evidencia_texto: bloque.querySelector('.act-evidencia-texto').value,
@@ -717,35 +756,87 @@
                     observaciones: bloque.querySelector('.act-observaciones').value
                 });
             });
-            ESTADO.actividades = lista;
+            ESTADO.porBitacora[numero] = lista;
         }
 
         function guardarEstado() {
             leerCamposComunes();
-            leerActividades();
+            leerCompetencias();
+            leerActividadesBitacoraActual(numeroActual);
             persistirEstado();
         }
 
         // ============================================================
-        //  Construcción de los bloques de actividades en el DOM
+        //  Competencias del programa de formación (una sola vez)
         // ============================================================
-        function construirBloqueActividadHTML(indice, datos) {
+        function contarCompetencias() {
+            return document.querySelectorAll('#contenedorCompetencias .competencia-bloque').length;
+        }
+
+        function construirBloqueCompetenciaHTML(indice, valor) {
+            return '' +
+                '<div class="competencia-bloque border rounded p-2 mb-2 d-flex align-items-start" data-index="' + indice + '">' +
+                '  <div class="flex-grow-1 mr-2">' +
+                '    <label class="bitacora-required mb-1">Competencia ' + (indice + 1) + '</label>' +
+                '    <textarea class="form-control competencia-texto" rows="2" required>' + escapeHtml(valor) + '</textarea>' +
+                '  </div>' +
+                '  <button type="button" class="btn btn-sm btn-danger btnRemoveCompetencia no-print mt-4"><i class="fas fa-trash"></i></button>' +
+                '</div>';
+        }
+
+        function renumerarCompetencias() {
+            document.querySelectorAll('#contenedorCompetencias .competencia-bloque label').forEach(function (el, idx) {
+                el.textContent = 'Competencia ' + (idx + 1);
+            });
+        }
+
+        function agregarBloqueCompetencia(valor) {
+            var contenedor = document.getElementById('contenedorCompetencias');
+            var indice = contenedor.querySelectorAll('.competencia-bloque').length;
+            var div = document.createElement('div');
+            div.innerHTML = construirBloqueCompetenciaHTML(indice, valor);
+            var bloque = div.firstElementChild;
+            contenedor.appendChild(bloque);
+            bloque.querySelector('.btnRemoveCompetencia').addEventListener('click', function () {
+                if (contarCompetencias() <= MIN_ACTIVIDADES) {
+                    mostrarAviso('Debe mantener al menos ' + MIN_ACTIVIDADES + ' competencias registradas.');
+                    return;
+                }
+                bloque.remove();
+                renumerarCompetencias();
+                guardarEstado();
+                renderizarActividadesPorBitacora(numeroActual);
+            });
+            return bloque;
+        }
+
+        function renderizarCompetenciasIniciales(lista) {
+            var contenedor = document.getElementById('contenedorCompetencias');
+            contenedor.innerHTML = '';
+            var total = Math.max(MIN_ACTIVIDADES, (lista || []).length);
+            for (var i = 0; i < total; i++) agregarBloqueCompetencia((lista || [])[i]);
+        }
+
+        document.getElementById('btnAddCompetencia').addEventListener('click', function () {
+            agregarBloqueCompetencia();
+            guardarEstado();
+            renderizarActividadesPorBitacora(numeroActual);
+        });
+
+        // ============================================================
+        //  Descripción de actividades, evidencias y observaciones — cambia por bitácora
+        // ============================================================
+        function construirBloqueActividadBitacoraHTML(indice, competenciaTexto, datos) {
             datos = datos || {};
             var tieneImagen = !!datos.evidencia_imagen;
+            var descripcionCorta = (competenciaTexto || '(sin competencia todavía)').substring(0, 140);
             return '' +
                 '<div class="actividad-bloque border rounded p-3 mb-3" data-index="' + indice + '">' +
-                '  <div class="d-flex justify-content-between align-items-center mb-2">' +
-                '    <strong>Actividad ' + (indice + 1) + '</strong>' +
-                '    <button type="button" class="btn btn-sm btn-danger btnRemoveActividad no-print"><i class="fas fa-trash"></i></button>' +
-                '  </div>' +
+                '  <div class="font-weight-bold text-gray-700 mb-2">Competencia ' + (indice + 1) + ': <span class="font-weight-normal">' + escapeHtml(descripcionCorta) + '</span></div>' +
                 '  <div class="row">' +
-                '    <div class="form-group col-md-6">' +
-                '      <label class="bitacora-required">Descripción de la actividad</label>' +
+                '    <div class="form-group col-md-12">' +
+                '      <label class="bitacora-required">Descripción de la actividad realizada</label>' +
                 '      <textarea class="form-control act-descripcion" rows="2" required>' + escapeHtml(datos.descripcion) + '</textarea>' +
-                '    </div>' +
-                '    <div class="form-group col-md-6">' +
-                '      <label class="bitacora-required">Competencias del programa aplicadas</label>' +
-                '      <textarea class="form-control act-competencias" rows="2" required>' + escapeHtml(datos.competencias) + '</textarea>' +
                 '    </div>' +
                 '  </div>' +
                 '  <div class="row">' +
@@ -782,77 +873,77 @@
                 '</div>';
         }
 
-        function cablearBloqueActividad(bloque) {
-            var input = bloque.querySelector('.act-evidencia-imagen-input');
-            var wrapper = bloque.querySelector('.act-evidencia-imagen-wrapper');
-            var preview = bloque.querySelector('.act-evidencia-imagen-preview');
-            var fileLabel = input.nextElementSibling;
+        function renderizarActividadesPorBitacora(numero) {
+            var contenedor = document.getElementById('contenedorActividadesPorBitacora');
+            var alerta = document.getElementById('alertaSinBitacoraActividades');
+            var tituloNumero = document.getElementById('numeroBitacoraActividades');
+            var periodoDesde = document.getElementById('periodoDesde').value;
+            var periodoHasta = document.getElementById('periodoHasta').value;
 
-            input.addEventListener('change', function () {
-                var file = input.files && input.files[0];
-                if (!file) return;
-                if (fileLabel) fileLabel.textContent = file.name;
-                var reader = new FileReader();
-                reader.onload = function (e) {
-                    preview.src = e.target.result;
-                    wrapper.style.display = 'block';
-                    guardarEstado();
-                };
-                reader.readAsDataURL(file);
-            });
-
-            bloque.querySelector('.btn-quitar-act-imagen').addEventListener('click', function () {
-                input.value = '';
-                preview.src = '';
-                wrapper.style.display = 'none';
-                if (fileLabel) fileLabel.textContent = 'Seleccionar imagen...';
-                guardarEstado();
-            });
-
-            bloque.querySelector('.btnRemoveActividad').addEventListener('click', function () {
-                var total = document.querySelectorAll('#contenedorActividades .actividad-bloque').length;
-                if (total <= MIN_ACTIVIDADES) {
-                    mostrarAviso('Debe mantener al menos ' + MIN_ACTIVIDADES + ' actividades registradas.');
-                    return;
-                }
-                bloque.remove();
-                renumerarActividades();
-                guardarEstado();
-            });
-        }
-
-        function renumerarActividades() {
-            document.querySelectorAll('#contenedorActividades .actividad-bloque strong').forEach(function (el, idx) {
-                el.textContent = 'Actividad ' + (idx + 1);
-            });
-        }
-
-        function agregarBloqueActividad(datos) {
-            var contenedor = document.getElementById('contenedorActividades');
-            var indice = contenedor.querySelectorAll('.actividad-bloque').length;
-            var div = document.createElement('div');
-            div.innerHTML = construirBloqueActividadHTML(indice, datos);
-            var bloque = div.firstElementChild;
-            contenedor.appendChild(bloque);
-            cablearBloqueActividad(bloque);
-            return bloque;
-        }
-
-        function renderizarActividadesIniciales(listaGuardada) {
-            var contenedor = document.getElementById('contenedorActividades');
-            contenedor.innerHTML = '';
-            var total = Math.max(MIN_ACTIVIDADES, (listaGuardada || []).length);
-            for (var i = 0; i < total; i++) {
-                agregarBloqueActividad((listaGuardada || [])[i]);
+            if (!numero || !periodoDesde || !periodoHasta) {
+                contenedor.innerHTML = '';
+                alerta.classList.remove('d-none');
+                tituloNumero.textContent = '-';
+                return;
             }
+            alerta.classList.add('d-none');
+            tituloNumero.textContent = numero;
+
+            var totalCompetencias = contarCompetencias();
+            var competenciasTexto = Array.from(document.querySelectorAll('.competencia-texto')).map(function (el) { return el.value; });
+            var guardadas = ESTADO.porBitacora[numero] || [];
+
+            var html = '';
+            for (var i = 0; i < totalCompetencias; i++) {
+                var datos = guardadas[i] || {};
+                var datosConDefaults = {
+                    descripcion: datos.descripcion || '',
+                    fecha_inicio: datos.fecha_inicio || periodoDesde,
+                    fecha_fin: datos.fecha_fin || periodoHasta,
+                    evidencia_texto: datos.evidencia_texto || '',
+                    evidencia_imagen: datos.evidencia_imagen || null,
+                    observaciones: datos.observaciones || ''
+                };
+                html += construirBloqueActividadBitacoraHTML(i, competenciasTexto[i], datosConDefaults);
+            }
+            contenedor.innerHTML = html;
+
+            contenedor.querySelectorAll('.act-evidencia-imagen-input').forEach(function (input) {
+                input.addEventListener('change', function () {
+                    var file = input.files && input.files[0];
+                    if (!file) return;
+                    var bloque = input.closest('.actividad-bloque');
+                    var wrapper = bloque.querySelector('.act-evidencia-imagen-wrapper');
+                    var preview = bloque.querySelector('.act-evidencia-imagen-preview');
+                    var fileLabel = input.nextElementSibling;
+                    if (fileLabel) fileLabel.textContent = file.name;
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        preview.src = e.target.result;
+                        wrapper.style.display = 'block';
+                        guardarEstado();
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            contenedor.querySelectorAll('.btn-quitar-act-imagen').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var bloque = btn.closest('.actividad-bloque');
+                    var input = bloque.querySelector('.act-evidencia-imagen-input');
+                    var preview = bloque.querySelector('.act-evidencia-imagen-preview');
+                    var wrapper = bloque.querySelector('.act-evidencia-imagen-wrapper');
+                    var fileLabel = input.nextElementSibling;
+                    input.value = '';
+                    preview.src = '';
+                    wrapper.style.display = 'none';
+                    if (fileLabel) fileLabel.textContent = 'Seleccionar imagen...';
+                    guardarEstado();
+                });
+            });
         }
 
-        document.getElementById('btnAddActividad').addEventListener('click', function () {
-            agregarBloqueActividad();
-            guardarEstado();
-        });
-
-        // Autoguardado ante cualquier cambio dentro del formulario
+        // Autoguardado ante cualquier cambio dentro del formulario (campos comunes + competencias + actividades)
         document.getElementById('formBitacora').addEventListener('input', guardarEstado);
         document.getElementById('formBitacora').addEventListener('change', guardarEstado);
 
@@ -916,19 +1007,64 @@
         });
 
         // ============================================================
-        //  Validación (una sola vez: aplica a las 12 bitácoras)
+        //  Validación
         // ============================================================
-        function validarActividades() {
+        // Valida las competencias (plantilla, una sola vez): mínimo 3, sin repetir.
+        function validarCompetencias() {
             var errores = [];
-            var bloques = Array.from(document.querySelectorAll('#contenedorActividades .actividad-bloque'));
-            var descripciones = [];
-            var competencias = [];
+            var bloques = Array.from(document.querySelectorAll('#contenedorCompetencias .competencia-bloque'));
+            var vistas = [];
             var completas = 0;
+            bloques.forEach(function (bloque, idx) {
+                var input = bloque.querySelector('.competencia-texto');
+                var valor = input.value.trim();
+                if (!valor) { input.classList.add('is-invalid'); errores.push('Competencia ' + (idx + 1) + ': es obligatoria.'); return; }
+                var norm = valor.toLowerCase();
+                if (vistas.indexOf(norm) !== -1) {
+                    input.classList.add('is-invalid');
+                    errores.push('Competencia ' + (idx + 1) + ': está repetida; cada competencia debe ser diferente.');
+                    return;
+                }
+                vistas.push(norm);
+                completas++;
+            });
+            if (completas < MIN_ACTIVIDADES) errores.push('Debe registrar al menos ' + MIN_ACTIVIDADES + ' competencias.');
+            return errores;
+        }
+
+        // Valida las actividades (descripción/fechas/evidencia) de UNA bitácora específica.
+        // Si se pasa periodo, valida que las fechas caigan dentro de ese período.
+        function validarActividadesDeBitacora(lista, numeroBitacora, periodo) {
+            var errores = [];
+            (lista || []).forEach(function (act, idx) {
+                var numAct = idx + 1;
+                var prefijo = 'Bitácora ' + numeroBitacora + ', competencia ' + numAct + ': ';
+                var desc = (act.descripcion || '').trim();
+                var fi = act.fecha_inicio;
+                var ff = act.fecha_fin;
+                var texto = (act.evidencia_texto || '').trim();
+                var tieneImagen = !!act.evidencia_imagen;
+
+                if (!desc) errores.push(prefijo + 'la descripción de la actividad es obligatoria.');
+                if (!fi || !ff) errores.push(prefijo + 'faltan las fechas de la actividad.');
+                if (fi && ff && fi > ff) errores.push(prefijo + 'la fecha de fin no puede ser anterior a la de inicio.');
+                if (periodo && fi && (fi < periodo.desde || fi > periodo.hasta)) errores.push(prefijo + 'la fecha de inicio debe estar dentro del período (' + periodo.desde + ' a ' + periodo.hasta + ').');
+                if (periodo && ff && (ff < periodo.desde || ff > periodo.hasta)) errores.push(prefijo + 'la fecha de fin debe estar dentro del período (' + periodo.desde + ' a ' + periodo.hasta + ').');
+                if (!texto && !tieneImagen) errores.push(prefijo + 'agrega la evidencia como texto, como imagen, o ambas.');
+            });
+            return errores;
+        }
+
+        // Valida (con resaltado visual) la bitácora que se está viendo ahora mismo en pantalla.
+        function validarActividadesVisibles() {
+            var errores = [];
+            var bloques = Array.from(document.querySelectorAll('#contenedorActividadesPorBitacora .actividad-bloque'));
+            var periodoDesde = document.getElementById('periodoDesde').value;
+            var periodoHasta = document.getElementById('periodoHasta').value;
 
             bloques.forEach(function (bloque, idx) {
                 var numAct = idx + 1;
                 var descInput = bloque.querySelector('.act-descripcion');
-                var compInput = bloque.querySelector('.act-competencias');
                 var fiInput = bloque.querySelector('.act-fecha-inicio');
                 var ffInput = bloque.querySelector('.act-fecha-fin');
                 var textoInput = bloque.querySelector('.act-evidencia-texto');
@@ -936,45 +1072,20 @@
                 var tieneImagen = imgPreview && imgPreview.src && imgPreview.src.indexOf('data:') === 0;
 
                 var desc = descInput.value.trim();
-                var comp = compInput.value.trim();
                 var fi = fiInput.value;
                 var ff = ffInput.value;
                 var texto = textoInput.value.trim();
 
-                var filaVacia = !desc && !comp && !fi && !ff && !texto && !tieneImagen;
-                if (filaVacia) return;
-
-                var ok = true;
-                if (!desc) { descInput.classList.add('is-invalid'); errores.push('Actividad ' + numAct + ': la descripción es obligatoria.'); ok = false; }
-                if (!comp) { compInput.classList.add('is-invalid'); errores.push('Actividad ' + numAct + ': las competencias aplicadas son obligatorias.'); ok = false; }
-                if (!fi) { fiInput.classList.add('is-invalid'); errores.push('Actividad ' + numAct + ': la fecha de inicio es obligatoria.'); ok = false; }
-                if (!ff) { ffInput.classList.add('is-invalid'); errores.push('Actividad ' + numAct + ': la fecha de fin es obligatoria.'); ok = false; }
-                if (fi && ff && fi > ff) { ffInput.classList.add('is-invalid'); errores.push('Actividad ' + numAct + ': la fecha de fin no puede ser anterior a la de inicio.'); ok = false; }
-                if (!texto && !tieneImagen) { textoInput.classList.add('is-invalid'); errores.push('Actividad ' + numAct + ': agrega la evidencia como texto, como imagen, o ambas.'); ok = false; }
-
-                if (desc) {
-                    var descNorm = desc.toLowerCase();
-                    if (descripciones.indexOf(descNorm) !== -1) {
-                        descInput.classList.add('is-invalid');
-                        errores.push('Actividad ' + numAct + ': la descripción está repetida; cada actividad debe ser diferente.');
-                        ok = false;
-                    } else { descripciones.push(descNorm); }
+                if (!desc) { descInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la descripción de la actividad es obligatoria.'); }
+                if (!fi) { fiInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de inicio es obligatoria.'); }
+                if (!ff) { ffInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de fin es obligatoria.'); }
+                if (fi && ff && fi > ff) { ffInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de fin no puede ser anterior a la de inicio.'); }
+                if (periodoDesde && periodoHasta) {
+                    if (fi && (fi < periodoDesde || fi > periodoHasta)) { fiInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de inicio debe estar dentro del período (' + periodoDesde + ' a ' + periodoHasta + ').'); }
+                    if (ff && (ff < periodoDesde || ff > periodoHasta)) { ffInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de fin debe estar dentro del período (' + periodoDesde + ' a ' + periodoHasta + ').'); }
                 }
-                if (comp) {
-                    var compNorm = comp.toLowerCase();
-                    if (competencias.indexOf(compNorm) !== -1) {
-                        compInput.classList.add('is-invalid');
-                        errores.push('Actividad ' + numAct + ': la competencia está repetida; cada competencia debe ser diferente.');
-                        ok = false;
-                    } else { competencias.push(compNorm); }
-                }
-
-                if (ok && desc && comp && fi && ff && (texto || tieneImagen)) completas++;
+                if (!texto && !tieneImagen) { textoInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': agrega la evidencia como texto, como imagen, o ambas.'); }
             });
-
-            if (completas < MIN_ACTIVIDADES) {
-                errores.push('Debe registrar al menos ' + MIN_ACTIVIDADES + ' actividades completas.');
-            }
 
             return errores;
         }
@@ -999,7 +1110,16 @@
             document.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
             document.getElementById('erroresValidacion').classList.add('d-none');
 
-            var errores = validarActividades();
+            var errores = validarCompetencias().concat(validarActividadesVisibles());
+
+            var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
+            for (var n = 1; n <= MAX_BITACORAS; n++) {
+                if (String(n) === String(numeroActual)) continue; // esa ya se validó arriba, con resaltado visual
+                var periodo = periodoParaNumero(fechaInicioEtapa, n);
+                var lista = ESTADO.porBitacora[n] || [];
+                errores = errores.concat(validarActividadesDeBitacora(lista, n, periodo));
+            }
+
             if (errores.length > 0) {
                 mostrarErrores(errores);
                 return null;
@@ -1009,28 +1129,47 @@
         }
 
         // ============================================================
-        //  Recolección de los datos completos: las 12 bitácoras comparten
-        //  exactamente la misma info (solo cambia el número/período informativo).
+        //  Recolección de los datos completos: combina las competencias (compartidas)
+        //  con la descripción/fechas/evidencia de CADA bitácora (independientes).
         // ============================================================
         function recolectarDatosCompletos() {
             var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
+            var totalCompetencias = ESTADO.competencias.length;
             var bitacoras = [];
             for (var n = 1; n <= MAX_BITACORAS; n++) {
                 var periodo = periodoParaNumero(fechaInicioEtapa, n);
+                var lista = ESTADO.porBitacora[n] || [];
+                var actividades = [];
+                for (var i = 0; i < totalCompetencias; i++) {
+                    var act = lista[i] || {};
+                    actividades.push({
+                        descripcion: act.descripcion || '',
+                        competencias: ESTADO.competencias[i] || '',
+                        fecha_inicio: act.fecha_inicio || (periodo ? periodo.desde : ''),
+                        fecha_fin: act.fecha_fin || (periodo ? periodo.hasta : ''),
+                        evidencia_texto: act.evidencia_texto || '',
+                        evidencia_imagen: act.evidencia_imagen || null,
+                        observaciones: act.observaciones || ''
+                    });
+                }
                 bitacoras.push({
                     numero: n,
                     periodoDesde: periodo ? periodo.desde : '',
-                    periodoHasta: periodo ? periodo.hasta : ''
+                    periodoHasta: periodo ? periodo.hasta : '',
+                    actividades: actividades
                 });
             }
+            // "actividades" a nivel raíz queda como la de la bitácora actualmente seleccionada,
+            // por compatibilidad con quien solo necesite un ejemplo rápido (no se usa para generar).
             return {
                 campos: ESTADO.campos,
                 alternativa: ESTADO.alternativa,
-                actividades: ESTADO.actividades,
+                actividades: (bitacoras[(parseInt(numeroActual, 10) || 1) - 1] || {}).actividades || [],
                 firmas: ESTADO.firmas,
                 bitacoras: bitacoras
             };
         }
+
 
         // ============================================================
         //  Utilidades para imágenes (firmas y evidencias) en el PDF
@@ -1189,9 +1328,9 @@
             // Ese encabezado de actividades va con barra negra (no gris), como en el PDF:
             for (var col = 1; col <= 6; col++) aplicarEstiloBarraNegra(ws.getCell(filaActual - 1, col));
 
-            var totalFilasAct = Math.max(5, datos.actividades.length);
+            var totalFilasAct = Math.max(5, bit.actividades.length);
             for (var i = 0; i < totalFilasAct; i++) {
-                var act = datos.actividades[i] || {};
+                var act = bit.actividades[i] || {};
                 var evidenciaTexto = act.evidencia_texto || (act.evidencia_imagen ? '[Imagen adjunta: ver el PDF de esta bitácora]' : '');
                 filaValores([act.descripcion, act.competencias, act.fecha_inicio, act.fecha_fin, evidenciaTexto, act.observaciones], 'left');
             }
@@ -1204,25 +1343,32 @@
             espacio();
 
             barra('Firmas y entrega');
-            filaEtiquetas(['Firma del aprendiz', '', 'Fecha entrega bitácora', '', 'Firma instructor / co-formador', '']);
+            filaEtiquetas(['Firma del aprendiz', '', 'Fecha entrega bitácora', '', '', '']);
             ws.getRow(filaActual).height = 55; // fila más alta para que quepa la imagen de la firma
-            var filaFirmaValores = filaActual;
+            var filaFirmaAprendiz = filaActual;
             filaValores(['', '', c.fecha_entrega, '', '', '']);
             fusionarUltimasDos(1, 2); fusionarUltimasDos(3, 4); fusionarUltimasDos(5, 6);
 
-            function incrustarFirma(dataUrlFirma, colInicio) {
+            filaEtiquetas(['Firma del instructor de seguimiento', '', '', 'Firma del ente co-formador', '', '']);
+            ws.getRow(filaActual).height = 55;
+            var filaFirmaInstructorCoformador = filaActual;
+            filaValores(['', '', '', '', '', '']);
+            fusionarUltimasDos(1, 3); fusionarUltimasDos(4, 6);
+
+            function incrustarFirma(dataUrlFirma, fila, colInicio) {
                 if (!dataUrlFirma) {
-                    ws.getCell(filaFirmaValores, colInicio).value = '(sin firma)';
+                    ws.getCell(fila, colInicio).value = '(sin firma)';
                     return;
                 }
                 var ext = 'png';
                 if (dataUrlFirma.indexOf('image/jpeg') !== -1 || dataUrlFirma.indexOf('image/jpg') !== -1) ext = 'jpeg';
                 else if (dataUrlFirma.indexOf('image/gif') !== -1) ext = 'gif';
                 var idImg = wb.addImage({ base64: dataUrlFirma, extension: ext });
-                ws.addImage(idImg, { tl: { col: colInicio - 1 + 0.2, row: filaFirmaValores - 1 + 0.1 }, ext: { width: 120, height: 45 } });
+                ws.addImage(idImg, { tl: { col: colInicio - 1 + 0.2, row: fila - 1 + 0.1 }, ext: { width: 120, height: 45 } });
             }
-            incrustarFirma(datos.firmas.firmaAprendiz, 1);
-            incrustarFirma(datos.firmas.firmaInstructor || datos.firmas.firmaCoformador, 5);
+            incrustarFirma(datos.firmas.firmaAprendiz, filaFirmaAprendiz, 1);
+            incrustarFirma(datos.firmas.firmaInstructor, filaFirmaInstructorCoformador, 1);
+            incrustarFirma(datos.firmas.firmaCoformador, filaFirmaInstructorCoformador, 4);
 
             return ws;
         }
@@ -1350,7 +1496,7 @@
             document.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
             document.getElementById('erroresValidacion').classList.add('d-none');
 
-            var errores = validarActividades();
+            var errores = validarCompetencias().concat(validarActividadesVisibles());
             if (errores.length > 0) { mostrarErrores(errores); return; }
             guardarEstado();
             mostrarAviso('Formulario válido. Usa el botón "Descargar formato" para generar las 12 bitácoras en PDF o Excel.', 'Formulario válido');
@@ -1380,7 +1526,7 @@
                 if (radio) radio.checked = true;
             }
 
-            renderizarActividadesIniciales(ESTADO.actividades);
+            renderizarCompetenciasIniciales(ESTADO.competencias);
 
             Object.keys(ESTADO.firmas || {}).forEach(function (prefijo) {
                 var base64 = ESTADO.firmas[prefijo];
@@ -1394,6 +1540,8 @@
             });
 
             calcularPeriodo();
+            numeroActual = document.getElementById('bitacoraNumero').value;
+            renderizarActividadesPorBitacora(numeroActual);
         }
 
         restaurarEstado();

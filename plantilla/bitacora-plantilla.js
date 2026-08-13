@@ -24,6 +24,14 @@
             return new Date(Date.UTC(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10)));
         }
 
+        // Convierte una fecha en formato "yyyy-mm-dd" (como vienen los <input type="date">) a "dd/mm/yyyy"
+        function formatearFechaDDMMYYYY(str) {
+            if (!str) return '';
+            var partes = str.split('-');
+            if (partes.length !== 3) return str;
+            return partes[2] + '/' + partes[1] + '/' + partes[0];
+        }
+
         function periodoParaNumero(fechaInicioStr, numero) {
             if (!fechaInicioStr || !numero) return null;
             var inicioEtapa = parseFechaInput(fechaInicioStr);
@@ -35,7 +43,7 @@
         }
 
         var FORM_STATE_KEY = 'bitacoraFormState';
-        var ESTADO = { campos: {}, alternativa: '', actividades: [], firmas: {} };
+        var ESTADO = { campos: {}, alternativa: '', competencias: [], porBitacora: {}, firmas: {} };
 
         function cargarEstadoDesdeStorage() {
             var raw;
@@ -45,7 +53,8 @@
                 var guardado = JSON.parse(raw);
                 ESTADO.campos = guardado.campos || {};
                 ESTADO.alternativa = guardado.alternativa || '';
-                ESTADO.actividades = guardado.actividades || [];
+                ESTADO.competencias = guardado.competencias || [];
+                ESTADO.porBitacora = guardado.porBitacora || {};
                 ESTADO.firmas = guardado.firmas || {};
             } catch (e) { /* estado corrupto, se ignora */ }
         }
@@ -62,17 +71,37 @@
         var TEXTO_OBLIGACION_1 = '1. Revisar periódicamente que el estudiante en práctica desarrolle labores relacionadas exclusivamente con su programa de formación o educación, que ameritaron su afiliación al Sistema General de Riesgos Laborales.';
         var TEXTO_OBLIGACION_2 = '2. Verificar que el espacio de práctica cuente con los elementos de protección personal apropiados según el riesgo ocupacional.';
 
+        // ------------------------------------------------------------------
+        // Cuadrícula de 8 columnas (equivalentes a las columnas B..I del Excel
+        // oficial), con los anchos REALES extraídos de esa hoja. Se usa la MISMA
+        // cuadrícula en TODAS las tablas del documento, así los bordes de
+        // cualquier fila coinciden verticalmente con los de cualquier otra fila,
+        // en toda la página — igual que en el archivo original.
+        // ------------------------------------------------------------------
+        var ANCHOS_COLUMNAS_8 = [13.73, 8.78, 10.87, 10.08, 11.37, 11.37, 16.46, 17.34]; // B,C,D,E,F,G,H,I
+        var COLGROUP_8 = '<colgroup>' + ANCHOS_COLUMNAS_8.map(function (w) { return '<col style="width:' + w + '%">'; }).join('') + '</colgroup>';
+        function tablaGrid(contenidoFilas, margenInferior) {
+            return '<table style="width:100%;border-collapse:collapse;table-layout:fixed;' + (margenInferior !== false ? 'margin-bottom:6px;' : '') + '">' +
+                COLGROUP_8 + contenidoFilas + '</table>';
+        }
+
         function barraNegra(texto) {
             return '<div style="background:#000;color:#fff;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:9px;">' + escapeHtml(texto) + '</div>';
         }
         function barraBlanca(texto) {
             return '<div style="background:#fff;color:#000;font-weight:bold;text-align:center;padding:3px 4px;border:1px solid #000;font-size:9px;">' + escapeHtml(texto) + '</div>';
         }
-        function celdaEtiqueta(texto) {
-            return '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px 3px;">' + escapeHtml(texto) + '</td>';
+        function celdaEtiqueta(texto, colspan, rowspan) {
+            return '<td colspan="' + (colspan || 1) + '"' + (rowspan ? ' rowspan="' + rowspan + '"' : '') + ' style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px 3px;">' + escapeHtml(texto) + '</td>';
         }
-        function celdaValor(texto, alinear) {
-            return '<td style="border:1px solid #000;text-align:' + (alinear || 'left') + ';font-size:8px;padding:3px 4px;">' + escapeHtml(texto || '') + '</td>';
+        function celdaEtiquetaOscura(texto, colspan) {
+            return '<td colspan="' + (colspan || 1) + '" style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px 3px;">' + escapeHtml(texto) + '</td>';
+        }
+        function celdaValor(texto, alinear, colspan, rowspan) {
+            return '<td colspan="' + (colspan || 1) + '"' + (rowspan ? ' rowspan="' + rowspan + '"' : '') + ' style="border:1px solid #000;text-align:' + (alinear || 'left') + ';font-size:8px;padding:3px 4px;">' + escapeHtml(texto || '') + '</td>';
+        }
+        function celdaLibre(contenidoHtml, colspan, rowspan, extraEstilo) {
+            return '<td colspan="' + (colspan || 1) + '"' + (rowspan ? ' rowspan="' + rowspan + '"' : '') + ' style="border:1px solid #000;text-align:center;padding:3px;' + (extraEstilo || '') + '">' + contenidoHtml + '</td>';
         }
         function casilla(marcada) {
             return '<div style="width:9px;height:9px;border:1px solid #000;margin:0 auto;background:' + (marcada ? '#000' : '#fff') + ';"></div>';
@@ -82,17 +111,17 @@
             var c = datos.campos;
 
             var filasActividades = '';
-            var totalFilas = Math.max(5, datos.actividades.length);
+            var totalFilas = Math.max(5, bit.actividades.length);
             for (var i = 0; i < totalFilas; i++) {
-                var act = datos.actividades[i] || {};
+                var act = bit.actividades[i] || {};
                 var evidenciaTexto = act.evidencia_texto || (act.evidencia_imagen ? '(ver imagen adjunta)' : '');
                 filasActividades += '<tr>' +
-                    celdaValor(act.descripcion, 'center') +
-                    celdaValor(act.competencias, 'center') +
-                    celdaValor(act.fecha_inicio, 'center') +
-                    celdaValor(act.fecha_fin, 'center') +
-                    celdaValor(evidenciaTexto, 'center') +
-                    celdaValor(act.observaciones, 'center') +
+                    celdaValor(act.descripcion, 'center', 2) +
+                    celdaValor(act.competencias, 'center', 2) +
+                    celdaValor(act.fecha_inicio, 'center', 1) +
+                    celdaValor(act.fecha_fin, 'center', 1) +
+                    celdaValor(evidenciaTexto, 'center', 1) +
+                    celdaValor(act.observaciones, 'center', 1) +
                     '</tr>';
             }
 
@@ -107,21 +136,22 @@
             function xSi(id) { return altMarcada === id ? 'X' : ''; }
 
             function bloqueFirma(dataUrl) {
-                return dataUrl ? '<img src="' + dataUrl + '" style="max-height:55px;max-width:140px;">' : '&nbsp;';
+                return dataUrl ? '<img src="' + dataUrl + '" style="max-height:50px;max-width:130px;">' : '&nbsp;';
             }
 
             return '' +
                 '<div style="width:780px;padding:14px;font-family:Arial,Helvetica,sans-serif;color:#000;font-size:8px;">' +
 
-                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
-                '<tr>' +
-                '<td style="border:1px solid #000;text-align:center;padding:6px;" >' + (logoDataUrl ? '<img src="' + logoDataUrl + '" style="height:40px;">' : '') + '</td>' +
-                '<td style="border:1px solid #000;width:160px;padding:0;">' +
-                '<div style="border-bottom:1px solid #000;padding:3px;font-size:8px;">Código: GFPI-F-147</div>' +
-                '<div style="padding:3px;font-size:8px;">Versión: 05</div>' +
-                '</td>' +
-                '</tr>' +
-                '</table>' +
+                // Encabezado: logo (columnas B-H) + Código/Versión (columna I)
+                tablaGrid(
+                    '<tr>' +
+                    celdaLibre(logoDataUrl ? '<img src="' + logoDataUrl + '" style="height:38px;">' : '', 7) +
+                    '<td style="border:1px solid #000;padding:0;">' +
+                    '<div style="border-bottom:1px solid #000;padding:3px;font-size:8px;">Código: GFPI-F-147</div>' +
+                    '<div style="padding:3px;font-size:8px;">Versión: 05</div>' +
+                    '</td>' +
+                    '</tr>'
+                ) +
 
                 barraNegra('PROCESO') +
                 barraBlanca('GESTIÓN DE FORMACIÓN PROFESIONAL INTEGRAL') +
@@ -129,88 +159,97 @@
                 barraBlanca('FORMATO BITÁCORA DE SEGUIMIENTO ETAPA PRODUCTIVA') +
                 barraNegra('CLASIFICACIÓN DE LA INFORMACIÓN') +
 
-                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
-                '<tr>' +
-                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Pública</td>' +
-                '<td style="border:1px solid #000;width:26px;">' + casilla(true) + '</td>' +
-                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Pública Clasificada</td>' +
-                '<td style="border:1px solid #000;width:26px;">' + casilla(false) + '</td>' +
-                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Pública Reservada</td>' +
-                '<td style="border:1px solid #000;width:26px;">' + casilla(false) + '</td>' +
-                '</tr>' +
-                '</table>' +
+                // Pública (B) / casilla (C-D) / Pública Clasificada (E-F) / casilla (G) / Pública Reservada (H) / casilla (I)
+                tablaGrid(
+                    '<tr>' +
+                    celdaValor('Pública', 'left', 1) +
+                    celdaLibre(casilla(true), 2) +
+                    celdaValor('Pública Clasificada', 'left', 2) +
+                    celdaLibre(casilla(false), 1) +
+                    celdaValor('Pública Reservada', 'left', 1) +
+                    celdaLibre(casilla(false), 1) +
+                    '</tr>'
+                ) +
 
-                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
-                '<tr>' + celdaEtiqueta('Bitácoras N°') + '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;" colspan="2">PERÍODO A REPORTAR</td></tr>' +
-                '<tr>' + celdaValor(bit.numero, 'center') + celdaValor(bit.periodoDesde, 'center') + celdaValor(bit.periodoHasta, 'center') + '</tr>' +
-                '</table>' +
+                // Bitácora N° (B-D) / Período a reportar (E-I)
+                tablaGrid(
+                    '<tr>' + celdaEtiqueta('Bitácora N°', 3) + celdaEtiqueta('PERÍODO A REPORTAR', 5) + '</tr>' +
+                    '<tr>' + celdaValor(bit.numero, 'center', 3) +
+                    celdaLibre('Desde <strong>' + escapeHtml(formatearFechaDDMMYYYY(bit.periodoDesde)) + '</strong> hasta <strong>' + escapeHtml(formatearFechaDDMMYYYY(bit.periodoHasta)) + '</strong>', 5, 1, 'font-size:8px;') +
+                    '</tr>'
+                ) +
 
                 barraNegra('Datos del aprendiz') +
-                '<table style="width:100%;border-collapse:collapse;">' +
-                '<tr>' + celdaEtiqueta('NOMBRE DEL APRENDIZ') + celdaEtiqueta('TIPO DE DOCUMENTO') + celdaEtiqueta('NUMERO DE IDENTIFICACION') + celdaEtiqueta('TELEFONO') + '</tr>' +
-                '<tr>' + celdaValor(c.aprendiz_nombre, 'center') + celdaValor(c.aprendiz_tipo_doc, 'center') + celdaValor(c.aprendiz_num_doc, 'center') + celdaValor(c.aprendiz_telefono, 'center') + '</tr>' +
-                '<tr>' + celdaEtiqueta('Correo electrónico institucional') + celdaEtiqueta('Correo electrónico personal') + celdaEtiqueta('Direccion Residencial') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
-                '<tr>' + celdaValor(c.aprendiz_correo_institucional, 'center') + celdaValor(c.aprendiz_correo_personal, 'center') + celdaValor(c.aprendiz_direccion, 'center') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
-                '<tr>' + celdaEtiqueta('Numero de Grupo') + celdaEtiqueta('Modalidad') + celdaEtiqueta('Programa de Formacion') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
-                '<tr>' + celdaValor(c.aprendiz_ficha, 'center') + celdaValor(c.aprendiz_modalidad_formacion, 'center') + celdaValor(c.aprendiz_programa, 'center') + '<td style="border:1px solid #000;"></td>' + '</tr>' +
-                '</table>' +
+                tablaGrid(
+                    // Nombre (B-D) / Tipo doc (E) / N° identificación (F-G) / Teléfono (H-I)
+                    '<tr>' + celdaEtiqueta('NOMBRE DEL APRENDIZ', 3) + celdaEtiqueta('TIPO DE DOCUMENTO', 1) + celdaEtiqueta('NUMERO DE IDENTIFICACION', 2) + celdaEtiqueta('TELEFONO', 2) + '</tr>' +
+                    '<tr>' + celdaValor(c.aprendiz_nombre, 'center', 3) + celdaValor(c.aprendiz_tipo_doc, 'center', 1) + celdaValor(c.aprendiz_num_doc, 'center', 2) + celdaValor(c.aprendiz_telefono, 'center', 2) + '</tr>' +
+                    // Correo institucional (B-D) / Correo personal (E-G) / Dirección (H-I)
+                    '<tr>' + celdaEtiqueta('Correo electrónico institucional', 3) + celdaEtiqueta('Correo electrónico personal', 3) + celdaEtiqueta('Direccion Residencial', 2) + '</tr>' +
+                    '<tr>' + celdaValor(c.aprendiz_correo_institucional, 'center', 3) + celdaValor(c.aprendiz_correo_personal, 'center', 3) + celdaValor(c.aprendiz_direccion, 'center', 2) + '</tr>' +
+                    // Número de grupo (B-D) / Modalidad (E-G) / Programa (H-I)
+                    '<tr>' + celdaEtiqueta('Numero de Grupo', 3) + celdaEtiqueta('Modalidad', 3) + celdaEtiqueta('Programa de Formacion', 2) + '</tr>' +
+                    '<tr>' + celdaValor(c.aprendiz_ficha, 'center', 3) + celdaValor(c.aprendiz_modalidad_formacion, 'center', 3) + celdaValor(c.aprendiz_programa, 'center', 2) + '</tr>' +
+                    // Modalidad de ejecución (B-D) / Exterior (E-G) / País (H-I)
+                    '<tr>' +
+                    celdaEtiqueta('Modalidad de ejecución de la etapa productiva (presencial o virtual)', 3) +
+                    celdaEtiqueta('¿Realiza la etapa productiva con una entidad u organización en el exterior? (si o no)', 3) +
+                    celdaEtiqueta('País donde realiza la etapa productiva', 2) +
+                    '</tr>' +
+                    '<tr>' + celdaValor(c.modalidad_ejecucion, 'center', 3) + celdaValor(c.etapa_exterior, 'center', 3) + celdaValor(c.etapa_pais, 'center', 2) + '</tr>'
+                ) +
 
                 barraNegra('Datos del ente co-formador') +
-                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
-                '<tr>' + celdaEtiqueta('EMPRESA') + celdaEtiqueta('NIT') + celdaEtiqueta('DIRECCION') + '</tr>' +
-                '<tr>' + celdaValor(c.empresa_nombre, 'center') + celdaValor(c.empresa_nit, 'center') + celdaValor(c.empresa_direccion, 'center') + '</tr>' +
-                '</table>' +
+                tablaGrid(
+                    // Empresa (B-E) / NIT (F-G) / Dirección (H-I)
+                    '<tr>' + celdaEtiqueta('Nombre de la entidad, empresa, institución u organización', 4) + celdaEtiqueta('NIT', 2) + celdaEtiqueta('Dirección', 2) + '</tr>' +
+                    '<tr>' + celdaValor(c.empresa_nombre, 'center', 4) + celdaValor(c.empresa_nit, 'center', 2) + celdaValor(c.empresa_direccion, 'center', 2) + '</tr>'
+                ) +
 
                 barraNegra('Datos de la persona encargada del proceso formativo del aprendiz en la entidad co-formadora') +
-                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
-                '<tr>' + celdaEtiqueta('NOMBRE DEL ENTE COFORMADOR') + celdaEtiqueta('CARGO DEL ENTE COFORMADOR') + celdaEtiqueta('TELEFONO') + celdaEtiqueta('CORREO ELECTRÓNICO') + '</tr>' +
-                '<tr>' + celdaValor(c.coformador_nombre, 'center') + celdaValor(c.coformador_cargo, 'center') + celdaValor(c.coformador_telefono, 'center') + celdaValor(c.coformador_correo, 'center') + '</tr>' +
-                '</table>' +
+                tablaGrid(
+                    // Nombre (B-D) / Cargo (E-F) / Teléfono (G) / Correo (H-I)
+                    '<tr>' + celdaEtiqueta('Nombre completo del ente co-formador (Jefe inmediato/Supervisor)', 3) + celdaEtiqueta('Cargo del ente co-formador', 2) + celdaEtiqueta('Contacto telefónico', 1) + celdaEtiqueta('Correo electrónico', 2) + '</tr>' +
+                    '<tr>' + celdaValor(c.coformador_nombre, 'center', 3) + celdaValor(c.coformador_cargo, 'center', 2) + celdaValor(c.coformador_telefono, 'center', 1) + celdaValor(c.coformador_correo, 'center', 2) + '</tr>'
+                ) +
 
                 barraNegra('Datos del instructor de seguimiento') +
-                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
-                '<tr>' + celdaEtiqueta('NOMBRE DE LA PERSONA CON ROL DE INSTRUCTOR DE SEGUIMIENTO:') + celdaEtiqueta('CORREO ELECTRÓNICO:') + '</tr>' +
-                '<tr>' + celdaValor(c.instructor_nombre, 'center') + celdaValor(c.instructor_correo, 'center') + '</tr>' +
-                '</table>' +
+                tablaGrid(
+                    // Nombre (B-F) / Correo (G-I)
+                    '<tr>' + celdaEtiqueta('Nombre completo del instructor de seguimiento', 5) + celdaEtiqueta('Correo electrónico del instructor de seguimiento', 3) + '</tr>' +
+                    '<tr>' + celdaValor(c.instructor_nombre, 'center', 5) + celdaValor(c.instructor_correo, 'center', 3) + '</tr>'
+                ) +
 
                 '<div style="border:1px solid #000;padding:3px;font-size:7.5px;margin-bottom:4px;">Seleccione con una "X" el tipo de alternativa de etapa productiva que está realizando, teniendo en cuenta el subtipo al cual pertenece si es el caso:</div>' +
 
-                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
-                '<tr>' +
-                '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;">ALTERNATIVA DE ETAPA PRODUCTIVA</td>' +
-                '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;width:60px;">Marque con una X</td>' +
-                '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;">Alternativa de etapa productiva</td>' +
-                '<td style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;width:60px;">Marque con una X</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Contrato de Aprendizaje.</td>' +
-                '<td style="border:1px solid #000;text-align:center;font-weight:bold;">' + xSi('altContrato') + '</td>' +
-                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Monitoria.</td>' +
-                '<td style="border:1px solid #000;text-align:center;font-weight:bold;">' + xSi('altMonitoria') + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<td style="border:1px solid #000;font-size:8px;padding:3px;" rowspan="2">Vínculo Formativo.</td>' +
-                '<td style="border:1px solid #000;text-align:center;font-weight:bold;" rowspan="2">' + xSi('altVinculo') + '</td>' +
-                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Proyecto productivo.</td>' +
-                '<td style="border:1px solid #000;text-align:center;font-weight:bold;">' + xSi('altProyecto') + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<td style="border:1px solid #000;font-size:8px;padding:3px;">Vínculo laboral.</td>' +
-                '<td style="border:1px solid #000;text-align:center;font-weight:bold;">' + xSi('altLaboral') + '</td>' +
-                '</tr>' +
-                '</table>' +
+                // Alternativa (B) / Marque X (C-F) / Alternativa (G) / Marquen X (H-I)
+                tablaGrid(
+                    '<tr>' + celdaEtiqueta('Alternativa de etapa productiva', 1) + celdaEtiqueta('Marque con una X', 4) + celdaEtiqueta('Alternativa de etapa productiva', 1) + celdaEtiqueta('Marquen con una X', 2) + '</tr>' +
+                    '<tr>' +
+                    celdaValor('Contrato de aprendizaje', 'left', 1) + celdaLibre('<strong>' + xSi('altContrato') + '</strong>', 4) +
+                    celdaValor('Monitoria', 'left', 1) + celdaLibre('<strong>' + xSi('altMonitoria') + '</strong>', 2) +
+                    '</tr>' +
+                    '<tr>' +
+                    celdaValor('Vínculo Formativo', 'left', 1, 2) + celdaLibre('<strong>' + xSi('altVinculo') + '</strong>', 4, 2) +
+                    celdaValor('Proyecto productivo', 'left', 1) + celdaLibre('<strong>' + xSi('altProyecto') + '</strong>', 2) +
+                    '</tr>' +
+                    '<tr>' +
+                    celdaValor('Vínculo laboral', 'left', 1) + celdaLibre('<strong>' + xSi('altLaboral') + '</strong>', 2) +
+                    '</tr>'
+                ) +
 
-                '<table style="width:100%;border-collapse:collapse;margin-bottom:6px;">' +
-                '<tr>' +
-                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">DESCRIPCIÓN DE LA ACTIVIDAD</td>' +
-                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">Competencias del programa de formación aplicadas en el desarrollo de la actividad</td>' +
-                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">FECHA DE INICIO</td>' +
-                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">FECHA DE FIN</td>' +
-                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">EVIDENCIA DE CUMPLIMIENTO</td>' +
-                '<td style="border:1px solid #000;background:#000;color:#fff;font-weight:bold;text-align:center;font-size:7px;padding:2px;">OBSERVACIONES, INASISTENCIAS, DIFICULTADES PRESENTADAS</td>' +
-                '</tr>' +
-                filasActividades +
-                '</table>' +
+                // Descripción (B-C) / Competencias (D-E) / F.inicio (F) / F.fin (G) / Evidencia (H) / Observaciones (I)
+                tablaGrid(
+                    '<tr>' +
+                    celdaEtiquetaOscura('DESCRIPCIÓN DE LA ACTIVIDAD', 2) +
+                    celdaEtiquetaOscura('Competencias del programa de formación aplicadas en el desarrollo de la actividad', 2) +
+                    celdaEtiquetaOscura('FECHA DE INICIO', 1) +
+                    celdaEtiquetaOscura('FECHA DE FIN', 1) +
+                    celdaEtiquetaOscura('EVIDENCIA DE CUMPLIMIENTO', 1) +
+                    celdaEtiquetaOscura('OBSERVACIONES, INASISTENCIAS, DIFICULTADES', 1) +
+                    '</tr>' +
+                    filasActividades
+                ) +
 
                 '<div style="border:1px solid #000;background:#f2f2f2;font-weight:bold;text-align:center;font-size:7.5px;padding:2px;">' + escapeHtml(TEXTO_DECRETO) + '</div>' +
                 '<div style="border:1px solid #000;font-size:7.5px;padding:2px;">' + escapeHtml(TEXTO_ESPACIO_OBLIGATORIO) + '</div>' +
@@ -218,34 +257,37 @@
                 escapeHtml(TEXTO_ARTICULO_11) + '<br>' + escapeHtml(TEXTO_OBLIGACION_1) + '<br>' + escapeHtml(TEXTO_OBLIGACION_2) +
                 '</div>' +
 
-                '<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">' +
-                '<tr>' +
-                celdaEtiqueta('¿La persona con rol de aprendiz se encuentra afiliado a la ARL?') +
-                celdaEtiqueta('Indique el nivel de riesgo actual') +
-                celdaEtiqueta('¿El nivel de riesgo de la ARL corresponde a las actividades que desarrolla la persona con rol de aprendiz en la empresa?') +
-                celdaEtiqueta('¿La persona con rol de aprendiz cuenta con los elementos de protección personal (EPP), requeridos para desarrollar su etapa productiva?') +
-                '</tr>' +
-                '<tr>' + celdaValor(c.arl_afiliado, 'center') + celdaValor(c.arl_nivel_riesgo, 'center') + celdaValor(c.arl_nivel_corresponde, 'center') + celdaValor(c.arl_epp, 'center') + '</tr>' +
-                '</table>' +
+                // ARL: ¿afiliado? (B-C) / nivel riesgo (D-E) / ¿corresponde? (F-G) / ¿EPP? (H-I)
+                tablaGrid(
+                    '<tr>' +
+                    celdaEtiqueta('¿La persona con rol de aprendiz se encuentra afiliado a la ARL?', 2) +
+                    celdaEtiqueta('Indique el nivel de riesgo actual', 2) +
+                    celdaEtiqueta('¿El nivel de riesgo corresponde a las actividades que desarrolla en la empresa?', 2) +
+                    celdaEtiqueta('¿Cuenta con los elementos de protección personal (EPP) requeridos?', 2) +
+                    '</tr>' +
+                    '<tr>' + celdaValor(c.arl_afiliado, 'center', 2) + celdaValor(c.arl_nivel_riesgo, 'center', 2) + celdaValor(c.arl_nivel_corresponde, 'center', 2) + celdaValor(c.arl_epp, 'center', 2) + '</tr>'
+                ) +
 
-                '<table style="width:100%;border-collapse:collapse;">' +
-                '<tr>' +
-                '<td style="border:0;text-align:center;padding:6px 6px 0 6px;height:55px;width:50%;vertical-align:bottom;">' + bloqueFirma(datos.firmas.firmaAprendiz) + '</td>' +
-                '<td style="border:0;text-align:center;padding:6px 6px 0 6px;vertical-align:bottom;">' + escapeHtml(c.fecha_entrega || '') + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<td style="border:0;border-top:1px solid #000;text-align:center;font-size:7.5px;padding:2px;">Firma de la persona con rol de aprendiz</td>' +
-                '<td style="border:0;border-top:1px solid #000;text-align:center;font-size:7.5px;padding:2px;">Fecha entrega bitácora</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<td style="border:0;text-align:center;padding:16px 6px 0 6px;height:55px;vertical-align:bottom;">' + bloqueFirma(datos.firmas.firmaInstructor) + '</td>' +
-                '<td style="border:0;text-align:center;padding:16px 6px 0 6px;vertical-align:bottom;">' + bloqueFirma(datos.firmas.firmaCoformador) + '</td>' +
-                '</tr>' +
-                '<tr>' +
-                '<td style="border:0;border-top:1px solid #000;text-align:center;font-size:7.5px;padding:2px;">Firma del instructor de seguimiento</td>' +
-                '<td style="border:0;border-top:1px solid #000;text-align:center;font-size:7.5px;padding:2px;">Firma de la persona con rol de jefe inmediato</td>' +
-                '</tr>' +
-                '</table>' +
+                // Firmas: Aprendiz + Fecha (B-E / F-I), Instructor + Co-formador (B-E / F-I)
+                tablaGrid(
+                    '<tr>' +
+                    celdaLibre(bloqueFirma(datos.firmas.firmaAprendiz), 4, 1, 'height:50px;border-bottom:0;') +
+                    celdaLibre(escapeHtml(c.fecha_entrega || ''), 4, 1, 'border-bottom:0;') +
+                    '</tr>' +
+                    '<tr>' +
+                    celdaLibre('Firma de la persona con rol de aprendiz', 4, 1, 'border-top:0;font-size:7.5px;') +
+                    celdaLibre('Fecha entrega bitácora', 4, 1, 'border-top:0;font-size:7.5px;') +
+                    '</tr>' +
+                    '<tr>' +
+                    celdaLibre(bloqueFirma(datos.firmas.firmaInstructor), 4, 1, 'height:50px;border-bottom:0;') +
+                    celdaLibre(bloqueFirma(datos.firmas.firmaCoformador), 4, 1, 'border-bottom:0;') +
+                    '</tr>' +
+                    '<tr>' +
+                    celdaLibre('Firma del instructor de seguimiento', 4, 1, 'border-top:0;font-size:7.5px;') +
+                    celdaLibre('Firma de la persona con rol de jefe inmediato', 4, 1, 'border-top:0;font-size:7.5px;') +
+                    '</tr>',
+                    false
+                ) +
 
                 '</div>';
         }
@@ -261,4 +303,3 @@
             var nombre = partes.join(' - ');
             return nombre.replace(/[\\/:*?"<>|]/g, '-');
         }
-
