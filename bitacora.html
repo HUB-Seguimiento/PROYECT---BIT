@@ -19,6 +19,7 @@
 
     <!-- Custom styles for this template-->
     <link href="css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="css/sena-colores.css" rel="stylesheet">
 
     <style>
         .bitacora-required::after {
@@ -65,7 +66,7 @@
             <hr class="sidebar-divider">
 
             <li class="nav-item active">
-                <a class="nav-link" href="buttons.html">
+                <a class="nav-link" href="bitacora.html">
                     <i class="fas fa-fw fa-book"></i>
                     <span>Bitacora</span>
                 </a>
@@ -73,7 +74,7 @@
 
             <!-- Vista Previa -->
             <li class="nav-item">
-                <a class="nav-link" href="cards.html">
+                <a class="nav-link" href="vista-previa.html">
                     <i class="bi bi-eye"></i>
                     <span>Vista Previa</span>
                 </a>
@@ -83,7 +84,7 @@
 
             <!-- Ayuda -->
             <li class="nav-item">
-                <a class="nav-link" href="charts.html">
+                <a class="nav-link" href="ayuda.html">
                     <i class="bi bi-question-circle"></i>
                     <span>Ayuda</span>
                 </a>
@@ -838,9 +839,12 @@
         // ============================================================
         //  Descripción de actividades, evidencias y observaciones — cambia por bitácora
         // ============================================================
-        function construirBloqueActividadBitacoraHTML(indice, competenciaTexto, datos) {
+        function construirBloqueActividadBitacoraHTML(indice, competenciaTexto, datos, sugerenciaBitacora1) {
             datos = datos || {};
+            sugerenciaBitacora1 = sugerenciaBitacora1 || {};
             var tieneImagen = !!datos.evidencia_imagen;
+            var usaSugerenciaTexto = !datos.evidencia_texto && !!sugerenciaBitacora1.evidencia_texto;
+            var usaSugerenciaImagen = !tieneImagen && !!sugerenciaBitacora1.evidencia_imagen;
             var descripcionCorta = (competenciaTexto || '(sin competencia todavía)').substring(0, 140);
             return '' +
                 '<div class="actividad-bloque border rounded p-3 mb-3" data-index="' + indice + '">' +
@@ -868,7 +872,8 @@
                 '  <div class="row">' +
                 '    <div class="form-group col-md-6">' +
                 '      <label class="bitacora-required">Evidencia de cumplimiento (texto)</label>' +
-                '      <textarea class="form-control act-evidencia-texto" rows="2" placeholder="Obligatorio si no subes una imagen">' + escapeHtml(datos.evidencia_texto) + '</textarea>' +
+                '      <textarea class="form-control act-evidencia-texto" rows="2" placeholder="' + escapeHtml(usaSugerenciaTexto ? sugerenciaBitacora1.evidencia_texto : 'Obligatorio si no subes una imagen') + '">' + escapeHtml(datos.evidencia_texto) + '</textarea>' +
+                (usaSugerenciaTexto ? '      <small class="text-muted d-block mt-1"><i class="fas fa-magic"></i> Si no escribes nada aquí, se usará la evidencia de la Bitácora 1 al descargar.</small>' : '') +
                 '    </div>' +
                 '    <div class="form-group col-md-6">' +
                 '      <label>Evidencia de cumplimiento (imagen, opcional si escribiste texto)</label>' +
@@ -880,6 +885,12 @@
                 '        <img class="img-thumbnail act-evidencia-imagen-preview" style="max-height:90px;" src="' + (datos.evidencia_imagen || '') + '">' +
                 '        <button type="button" class="btn btn-sm btn-outline-danger ml-2 no-print btn-quitar-act-imagen"><i class="fas fa-times"></i> Quitar</button>' +
                 '      </div>' +
+                (usaSugerenciaImagen ? (
+                    '      <div class="mt-2 act-evidencia-sugerida-wrapper">' +
+                    '        <img class="img-thumbnail" style="max-height:90px;opacity:0.4;" src="' + sugerenciaBitacora1.evidencia_imagen + '">' +
+                    '        <small class="text-muted d-block"><i class="fas fa-magic"></i> Sugerencia de Bitácora 1 — se usará esta si no subes otra imagen aquí.</small>' +
+                    '      </div>'
+                ) : '') +
                 '    </div>' +
                 '  </div>' +
                 '</div>';
@@ -907,6 +918,7 @@
             var totalCompetencias = contarCompetencias();
             var competenciasTexto = Array.from(document.querySelectorAll('.competencia-texto')).map(function (el) { return el.value; });
             var guardadas = ESTADO.porBitacora[numero] || [];
+            var guardadasBitacora1 = String(numero) !== '1' ? (ESTADO.porBitacora['1'] || []) : [];
 
             var html = '';
             for (var i = 0; i < totalCompetencias; i++) {
@@ -919,7 +931,8 @@
                     evidencia_imagen: datos.evidencia_imagen || null,
                     observaciones: datos.observaciones || ''
                 };
-                html += construirBloqueActividadBitacoraHTML(i, competenciasTexto[i], datosConDefaults);
+                var sugerencia = guardadasBitacora1[i] || {};
+                html += construirBloqueActividadBitacoraHTML(i, competenciasTexto[i], datosConDefaults, sugerencia);
             }
             contenedor.innerHTML = html;
 
@@ -996,11 +1009,28 @@
             }
         }
 
+        // Aplica "N/A" como valor por defecto en TODAS las bitácoras (1-12) que todavía no
+        // tengan una observación propia distinta ya escrita — así no se pisa una observación
+        // real que el usuario haya puesto en otra bitácora distinta a la actual.
+        function propagarNoHayObservacionesATodas() {
+            var totalCompetencias = contarCompetencias();
+            for (var n = 1; n <= MAX_BITACORAS; n++) {
+                if (!ESTADO.porBitacora[n]) ESTADO.porBitacora[n] = [];
+                for (var i = 0; i < totalCompetencias; i++) {
+                    if (!ESTADO.porBitacora[n][i]) ESTADO.porBitacora[n][i] = {};
+                    var actual = ESTADO.porBitacora[n][i].observaciones;
+                    if (!actual || actual === TEXTO_SIN_OBSERVACIONES) {
+                        ESTADO.porBitacora[n][i].observaciones = TEXTO_SIN_OBSERVACIONES;
+                    }
+                }
+            }
+        }
+
         document.getElementById('hayObsSi').addEventListener('change', function () {
             if (this.checked) { aplicarSiHayObservaciones(); guardarEstado(); }
         });
         document.getElementById('hayObsNo').addEventListener('change', function () {
-            if (this.checked) { aplicarNoHayObservaciones(); guardarEstado(); }
+            if (this.checked) { aplicarNoHayObservaciones(); guardarEstado(); propagarNoHayObservacionesATodas(); persistirEstado(); }
         });
 
         // Autoguardado ante cualquier cambio dentro del formulario (campos comunes + competencias + actividades)
@@ -1092,6 +1122,18 @@
             return errores;
         }
 
+        // Devuelve la evidencia "efectiva" de una actividad: la propia si existe,
+        // o si está vacía, la de la Bitácora 1 (así funciona la "marca de agua"/herencia).
+        function obtenerEvidenciaEfectiva(numero, indice) {
+            var propia = (ESTADO.porBitacora[numero] || [])[indice] || {};
+            if (propia.evidencia_texto || propia.evidencia_imagen) {
+                return { texto: propia.evidencia_texto || '', imagen: propia.evidencia_imagen || null };
+            }
+            if (String(numero) === '1') return { texto: '', imagen: null };
+            var deBitacora1 = (ESTADO.porBitacora['1'] || [])[indice] || {};
+            return { texto: deBitacora1.evidencia_texto || '', imagen: deBitacora1.evidencia_imagen || null };
+        }
+
         // Valida las actividades (descripción/fechas/evidencia) de UNA bitácora específica.
         // Si se pasa periodo, valida que las fechas caigan dentro de ese período.
         function validarActividadesDeBitacora(lista, numeroBitacora, periodo) {
@@ -1102,15 +1144,14 @@
                 var desc = (act.descripcion || '').trim();
                 var fi = act.fecha_inicio;
                 var ff = act.fecha_fin;
-                var texto = (act.evidencia_texto || '').trim();
-                var tieneImagen = !!act.evidencia_imagen;
+                var evidenciaEfectiva = obtenerEvidenciaEfectiva(numeroBitacora, idx);
 
                 if (!desc) errores.push(prefijo + 'la descripción de la actividad es obligatoria.');
                 if (!fi || !ff) errores.push(prefijo + 'faltan las fechas de la actividad.');
                 if (fi && ff && fi > ff) errores.push(prefijo + 'la fecha de fin no puede ser anterior a la de inicio.');
                 if (periodo && fi && (fi < periodo.desde || fi > periodo.hasta)) errores.push(prefijo + 'la fecha de inicio debe estar dentro del período (' + periodo.desde + ' a ' + periodo.hasta + ').');
                 if (periodo && ff && (ff < periodo.desde || ff > periodo.hasta)) errores.push(prefijo + 'la fecha de fin debe estar dentro del período (' + periodo.desde + ' a ' + periodo.hasta + ').');
-                if (!texto && !tieneImagen) errores.push(prefijo + 'agrega la evidencia como texto, como imagen, o ambas.');
+                if (!evidenciaEfectiva.texto && !evidenciaEfectiva.imagen) errores.push(prefijo + 'agrega la evidencia como texto, como imagen, o ambas (o diligencia la de la Bitácora 1, que se hereda automáticamente).');
             });
             return errores;
         }
@@ -1130,6 +1171,7 @@
                 var textoInput = bloque.querySelector('.act-evidencia-texto');
                 var imgPreview = bloque.querySelector('.act-evidencia-imagen-preview');
                 var tieneImagen = imgPreview && imgPreview.src && imgPreview.src.indexOf('data:') === 0;
+                var tieneSugerencia = !!bloque.querySelector('.act-evidencia-sugerida-wrapper');
 
                 var desc = descInput.value.trim();
                 var fi = fiInput.value;
@@ -1144,7 +1186,13 @@
                     if (fi && (fi < periodoDesde || fi > periodoHasta)) { fiInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de inicio debe estar dentro del período (' + periodoDesde + ' a ' + periodoHasta + ').'); }
                     if (ff && (ff < periodoDesde || ff > periodoHasta)) { ffInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de fin debe estar dentro del período (' + periodoDesde + ' a ' + periodoHasta + ').'); }
                 }
-                if (!texto && !tieneImagen) { textoInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': agrega la evidencia como texto, como imagen, o ambas.'); }
+                // La evidencia también se considera cumplida si hay una "sugerencia" heredada de la Bitácora 1
+                // (el placeholder o la imagen semitransparente) y el usuario no la reemplazó.
+                var tieneEvidenciaPropiaOTexto = textoInput.placeholder && textoInput.placeholder !== 'Obligatorio si no subes una imagen';
+                if (!texto && !tieneImagen && !(tieneSugerencia || tieneEvidenciaPropiaOTexto)) {
+                    textoInput.classList.add('is-invalid');
+                    errores.push('Competencia ' + numAct + ': agrega la evidencia como texto, como imagen, o ambas.');
+                }
             });
 
             return errores;
@@ -1202,13 +1250,14 @@
                 var actividades = [];
                 for (var i = 0; i < totalCompetencias; i++) {
                     var act = lista[i] || {};
+                    var evidenciaEfectiva = obtenerEvidenciaEfectiva(n, i);
                     actividades.push({
                         descripcion: act.descripcion || '',
                         competencias: ESTADO.competencias[i] || '',
                         fecha_inicio: act.fecha_inicio || (periodo ? periodo.desde : ''),
                         fecha_fin: act.fecha_fin || (periodo ? periodo.hasta : ''),
-                        evidencia_texto: act.evidencia_texto || '',
-                        evidencia_imagen: act.evidencia_imagen || null,
+                        evidencia_texto: evidenciaEfectiva.texto,
+                        evidencia_imagen: evidenciaEfectiva.imagen,
                         observaciones: act.observaciones || ''
                     });
                 }

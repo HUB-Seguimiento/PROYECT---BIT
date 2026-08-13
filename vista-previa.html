@@ -19,6 +19,7 @@
 
     <!-- Custom styles for this template-->
     <link href="css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="css/sena-colores.css" rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
@@ -66,7 +67,7 @@
             <hr class="sidebar-divider">
 
             <li class="nav-item">
-                <a class="nav-link" href="buttons.html">
+                <a class="nav-link" href="bitacora.html">
                     <i class="fas fa-fw fa-book"></i>
                     <span>Bitacora</span>
                 </a>
@@ -74,7 +75,7 @@
 
             <!-- Vista Previa -->
             <li class="nav-item active">
-                <a class="nav-link" href="cards.html">
+                <a class="nav-link" href="vista-previa.html">
                     <i class="bi bi-eye"></i>
                     <span>Vista Previa</span>
                 </a>
@@ -84,7 +85,7 @@
 
             <!-- Ayuda -->
             <li class="nav-item">
-                <a class="nav-link" href="charts.html">
+                <a class="nav-link" href="ayuda.html">
                     <i class="bi bi-question-circle"></i>
                     <span>Ayuda</span>
                 </a>
@@ -119,7 +120,7 @@
 
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Vista Previa</h1>
-                        <a href="buttons.html" class="btn btn-sm btn-outline-primary no-print">
+                        <a href="bitacora.html" class="btn btn-sm btn-outline-primary no-print">
                             <i class="fas fa-pen"></i> Ir a diligenciar la bitácora
                         </a>
                     </div>
@@ -187,7 +188,7 @@
     <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
     <script src="js/sb-admin-2.min.js"></script>
 
-    <!-- Lógica y plantilla compartidas con buttons.html -->
+    <!-- Lógica y plantilla compartidas con bitacora.html -->
     <script src="js/bitacora-plantilla.js"></script>
 
     <script>
@@ -211,16 +212,23 @@
 
             var totalCompetencias = (ESTADO.competencias || []).length;
             var lista = (ESTADO.porBitacora || {})[numero] || [];
+            var listaBitacora1 = String(numero) !== '1' ? ((ESTADO.porBitacora || {})['1'] || []) : [];
             var actividades = [];
             for (var i = 0; i < totalCompetencias; i++) {
                 var act = lista[i] || {};
+                var evidenciaTexto = act.evidencia_texto || '';
+                var evidenciaImagen = act.evidencia_imagen || null;
+                if (!evidenciaTexto && !evidenciaImagen && listaBitacora1[i]) {
+                    evidenciaTexto = listaBitacora1[i].evidencia_texto || '';
+                    evidenciaImagen = listaBitacora1[i].evidencia_imagen || null;
+                }
                 actividades.push({
                     descripcion: act.descripcion || '',
                     competencias: ESTADO.competencias[i] || '',
                     fecha_inicio: act.fecha_inicio || (periodo ? periodo.desde : ''),
                     fecha_fin: act.fecha_fin || (periodo ? periodo.hasta : ''),
-                    evidencia_texto: act.evidencia_texto || '',
-                    evidencia_imagen: act.evidencia_imagen || null,
+                    evidencia_texto: evidenciaTexto,
+                    evidencia_imagen: evidenciaImagen,
                     observaciones: act.observaciones || ''
                 });
             }
