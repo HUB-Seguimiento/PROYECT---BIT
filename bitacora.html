@@ -216,8 +216,8 @@
                                 </div>
                                 <div class="row">
                                     <div class="form-group col-md-12">
-                                        <label class="bitacora-required">Dirección de residencia</label>
-                                        <input type="text" class="form-control" name="aprendiz_direccion" required>
+                                        <label>Dirección de residencia (opcional)</label>
+                                        <input type="text" class="form-control" name="aprendiz_direccion">
                                     </div>
                                 </div>
                                 <div class="row">
@@ -403,6 +403,11 @@
                                 <div id="alertaSinBitacoraActividades" class="alert alert-info d-none">
                                     Selecciona primero la fecha de inicio de la etapa y el número de bitácora en el "Encabezado" para habilitar esta sección.
                                 </div>
+                                <div id="controlFechaEntregaWrapper" class="form-group mb-3 d-none">
+                                    <label class="bitacora-required">Fecha de entrega de esta bitácora</label>
+                                    <input type="date" class="form-control" id="fechaEntregaBitacoraActual" style="max-width:220px;">
+                                    <small class="d-block text-muted mt-1">Cada bitácora se entrega en una fecha distinta — escríbela manualmente para la N° <span id="numeroBitacoraFechaEntrega">-</span>.</small>
+                                </div>
                                 <div id="controlObservacionesWrapper" class="form-group mb-3 d-none">
                                     <label class="d-block mb-1 font-weight-bold">¿Hay observaciones para esta bitácora?</label>
                                     <div class="custom-control custom-radio custom-control-inline">
@@ -487,8 +492,11 @@
                                         </div>
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label class="bitacora-required">Fecha entrega bitácora</label>
-                                        <input type="date" class="form-control" name="fecha_entrega" required>
+                                        <label class="text-muted">Fecha entrega bitácora</label>
+                                        <div class="alert alert-light border small mb-0 py-2">
+                                            <i class="fas fa-info-circle"></i> Cada bitácora tiene su propia fecha de entrega — se ingresa en la sección
+                                            "Descripción de actividades, evidencias y observaciones" de cada una (más abajo).
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -668,6 +676,7 @@
         document.getElementById('bitacoraNumero').addEventListener('change', function () {
             if (numeroActual) {
                 leerActividadesBitacoraActual(numeroActual);
+                leerFechaEntregaActual(numeroActual);
                 persistirEstado();
             }
             calcularPeriodo();
@@ -772,10 +781,20 @@
             ESTADO.porBitacora[numero] = lista;
         }
 
+        // Fecha de entrega: manual y distinta por cada bitácora (NUNCA se copia de otra).
+        function leerFechaEntregaActual(numero) {
+            if (!numero) return;
+            var input = document.getElementById('fechaEntregaBitacoraActual');
+            if (!input) return;
+            if (!ESTADO.fechasEntrega) ESTADO.fechasEntrega = {};
+            ESTADO.fechasEntrega[numero] = input.value;
+        }
+
         function guardarEstado() {
             leerCamposComunes();
             leerCompetencias();
             leerActividadesBitacoraActual(numeroActual);
+            leerFechaEntregaActual(numeroActual);
             persistirEstado();
         }
 
@@ -901,6 +920,9 @@
             var alerta = document.getElementById('alertaSinBitacoraActividades');
             var tituloNumero = document.getElementById('numeroBitacoraActividades');
             var controlObs = document.getElementById('controlObservacionesWrapper');
+            var controlFecha = document.getElementById('controlFechaEntregaWrapper');
+            var numeroFechaEntrega = document.getElementById('numeroBitacoraFechaEntrega');
+            var inputFechaEntrega = document.getElementById('fechaEntregaBitacoraActual');
             var periodoDesde = document.getElementById('periodoDesde').value;
             var periodoHasta = document.getElementById('periodoHasta').value;
 
@@ -908,12 +930,18 @@
                 contenedor.innerHTML = '';
                 alerta.classList.remove('d-none');
                 controlObs.classList.add('d-none');
+                controlFecha.classList.add('d-none');
                 tituloNumero.textContent = '-';
                 return;
             }
             alerta.classList.add('d-none');
             controlObs.classList.remove('d-none');
+            controlFecha.classList.remove('d-none');
             tituloNumero.textContent = numero;
+            numeroFechaEntrega.textContent = numero;
+            // Fecha de entrega: manual y distinta por bitácora — se llena con lo ya guardado
+            // para ESTA bitácora, o vacía si nunca se ha escrito (nunca se copia de otra).
+            inputFechaEntrega.value = (ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero]) || '';
 
             var totalCompetencias = contarCompetencias();
             var competenciasTexto = Array.from(document.querySelectorAll('.competencia-texto')).map(function (el) { return el.value; });
@@ -1205,6 +1233,12 @@
                 }
             });
 
+            var inputFechaEntrega = document.getElementById('fechaEntregaBitacoraActual');
+            if (inputFechaEntrega && !inputFechaEntrega.value) {
+                inputFechaEntrega.classList.add('is-invalid');
+                errores.push('Falta la fecha de entrega de esta bitácora (se ingresa manualmente, cada bitácora tiene la suya).');
+            }
+
             return errores;
         }
 
@@ -1213,7 +1247,16 @@
             contenedor.innerHTML = '<strong>Corrige lo siguiente antes de continuar:</strong><ul class="mb-0">' +
                 errores.map(function (er) { return '<li>' + er + '</li>'; }).join('') + '</ul>';
             contenedor.classList.remove('d-none');
-            contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // En vez de mandar a la persona hasta arriba a leer la lista, la llevamos directo
+            // al primer campo marcado en rojo, que es donde realmente necesita actuar.
+            var primerCampoInvalido = document.querySelector('.is-invalid');
+            if (primerCampoInvalido) {
+                primerCampoInvalido.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                primerCampoInvalido.focus({ preventScroll: true });
+            } else {
+                contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         function validarTodoAntesDeGenerar() {
@@ -1233,6 +1276,9 @@
             var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
             for (var n = 1; n <= MAX_BITACORAS; n++) {
                 if (String(n) === String(numeroActual)) continue; // esa ya se validó arriba, con resaltado visual
+                if (!ESTADO.fechasEntrega || !ESTADO.fechasEntrega[n]) {
+                    errores.push('Bitácora ' + n + ': falta la fecha de entrega (se ingresa manualmente en cada bitácora).');
+                }
                 var periodo = periodoParaNumero(fechaInicioEtapa, n);
                 var lista = ESTADO.porBitacora[n] || [];
                 errores = errores.concat(validarActividadesDeBitacora(lista, n, periodo));
@@ -1275,6 +1321,7 @@
                     numero: n,
                     periodoDesde: periodo ? periodo.desde : '',
                     periodoHasta: periodo ? periodo.hasta : '',
+                    fecha_entrega: (ESTADO.fechasEntrega && ESTADO.fechasEntrega[n]) || '',
                     actividades: actividades
                 });
             }
@@ -1465,7 +1512,7 @@
             filaEtiquetas(['Firma del aprendiz', '', 'Fecha entrega bitácora', '', '', '']);
             ws.getRow(filaActual).height = 55; // fila más alta para que quepa la imagen de la firma
             var filaFirmaAprendiz = filaActual;
-            filaValores(['', '', c.fecha_entrega, '', '', '']);
+            filaValores(['', '', bit.fecha_entrega, '', '', '']);
             fusionarUltimasDos(1, 2); fusionarUltimasDos(3, 4); fusionarUltimasDos(5, 6);
 
             filaEtiquetas(['Firma del instructor de seguimiento', '', '', 'Firma del ente co-formador', '', '']);

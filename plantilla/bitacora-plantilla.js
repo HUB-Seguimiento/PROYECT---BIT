@@ -1,5 +1,5 @@
 // ============================================================
-//  Lógica y plantilla compartidas entre buttons.html (formulario)
+//  Lógica y plantilla compartidas entre bitacora.html (formulario)
 //  y vista-previa.html (solo lectura). Un solo lugar para el diseño
 //  del formato oficial, así ambos se ven siempre igual.
 // ============================================================
@@ -43,7 +43,7 @@
         }
 
         var FORM_STATE_KEY = 'bitacoraFormState';
-        var ESTADO = { campos: {}, alternativa: '', competencias: [], porBitacora: {}, firmas: {} };
+        var ESTADO = { campos: {}, alternativa: '', competencias: [], porBitacora: {}, fechasEntrega: {}, firmas: {} };
 
         function cargarEstadoDesdeStorage() {
             var raw;
@@ -55,6 +55,7 @@
                 ESTADO.alternativa = guardado.alternativa || '';
                 ESTADO.competencias = guardado.competencias || [];
                 ESTADO.porBitacora = guardado.porBitacora || {};
+                ESTADO.fechasEntrega = guardado.fechasEntrega || {};
                 ESTADO.firmas = guardado.firmas || {};
             } catch (e) { /* estado corrupto, se ignora */ }
         }
@@ -153,7 +154,7 @@
             }
 
             return '' +
-                '<div style="width:780px;padding:14px;font-family:Arial,Helvetica,sans-serif;color:#000;font-size:8px;">' +
+                '<div style="width:780px;padding:14px;font-family:Calibri,\'Segoe UI\',Arial,sans-serif;color:#000;font-size:8px;">' +
 
                 // Encabezado: logo (columnas B-H) + Código/Versión (columna I).
                 // El logo se centra respecto al ANCHO TOTAL de la página (no solo su celda),
@@ -303,7 +304,7 @@
                 tablaGrid(
                     '<tr>' +
                     celdaLibre(bloqueFirma(datos.firmas.firmaAprendiz), 4, 1, 'height:50px;border:0;vertical-align:bottom;') +
-                    celdaLibre(escapeHtml(c.fecha_entrega || ''), 4, 1, 'border:0;vertical-align:bottom;') +
+                    celdaLibre(escapeHtml(bit.fecha_entrega || ''), 4, 1, 'border:0;vertical-align:bottom;') +
                     '</tr>' +
                     '<tr>' +
                     celdaLibre('Firma de la persona con rol de aprendiz', 4, 1, 'border:0;border-top:1px solid #000;font-size:7.5px;') +

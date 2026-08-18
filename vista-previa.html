@@ -242,6 +242,7 @@
                 numero: numero,
                 periodoDesde: periodo ? periodo.desde : '(define la fecha de inicio de la etapa en "Bitacora")',
                 periodoHasta: periodo ? periodo.hasta : '',
+                fecha_entrega: (ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero]) || '',
                 actividades: actividades
             };
 
