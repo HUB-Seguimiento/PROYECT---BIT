@@ -1136,6 +1136,9 @@
 
         // Valida las actividades (descripción/fechas/evidencia) de UNA bitácora específica.
         // Si se pasa periodo, valida que las fechas caigan dentro de ese período.
+        // ⚠️ AVISO TEMPORAL (caso especial en curso): dentro de esta función, la validación que
+        // exige que las fechas de cada actividad caigan DENTRO del período de su bitácora está
+        // comentada (no borrada). Busca "DESACTIVADO TEMPORALMENTE" más abajo para reactivarla.
         function validarActividadesDeBitacora(lista, numeroBitacora, periodo) {
             var errores = [];
             (lista || []).forEach(function (act, idx) {
@@ -1149,14 +1152,19 @@
                 if (!desc) errores.push(prefijo + 'la descripción de la actividad es obligatoria.');
                 if (!fi || !ff) errores.push(prefijo + 'faltan las fechas de la actividad.');
                 if (fi && ff && fi > ff) errores.push(prefijo + 'la fecha de fin no puede ser anterior a la de inicio.');
-                if (periodo && fi && (fi < periodo.desde || fi > periodo.hasta)) errores.push(prefijo + 'la fecha de inicio debe estar dentro del período (' + periodo.desde + ' a ' + periodo.hasta + ').');
-                if (periodo && ff && (ff < periodo.desde || ff > periodo.hasta)) errores.push(prefijo + 'la fecha de fin debe estar dentro del período (' + periodo.desde + ' a ' + periodo.hasta + ').');
+                // ==== DESACTIVADO TEMPORALMENTE (caso especial) — para reactivar, descomenta estas 2 líneas ====
+                // if (periodo && fi && (fi < periodo.desde || fi > periodo.hasta)) errores.push(prefijo + 'la fecha de inicio debe estar dentro del período (' + periodo.desde + ' a ' + periodo.hasta + ').');
+                // if (periodo && ff && (ff < periodo.desde || ff > periodo.hasta)) errores.push(prefijo + 'la fecha de fin debe estar dentro del período (' + periodo.desde + ' a ' + periodo.hasta + ').');
+                // ==== FIN DEL BLOQUE DESACTIVADO ====
                 if (!evidenciaEfectiva.texto && !evidenciaEfectiva.imagen) errores.push(prefijo + 'agrega la evidencia como texto, como imagen, o ambas (o diligencia la de la Bitácora 1, que se hereda automáticamente).');
             });
             return errores;
         }
 
         // Valida (con resaltado visual) la bitácora que se está viendo ahora mismo en pantalla.
+        // ⚠️ AVISO TEMPORAL (caso especial en curso): igual que en validarActividadesDeBitacora,
+        // la validación de fechas-dentro-del-período está comentada aquí abajo también.
+        // Busca "DESACTIVADO TEMPORALMENTE" para reactivarla.
         function validarActividadesVisibles() {
             var errores = [];
             var bloques = Array.from(document.querySelectorAll('#contenedorActividadesPorBitacora .actividad-bloque'));
@@ -1182,10 +1190,12 @@
                 if (!fi) { fiInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de inicio es obligatoria.'); }
                 if (!ff) { ffInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de fin es obligatoria.'); }
                 if (fi && ff && fi > ff) { ffInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de fin no puede ser anterior a la de inicio.'); }
-                if (periodoDesde && periodoHasta) {
-                    if (fi && (fi < periodoDesde || fi > periodoHasta)) { fiInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de inicio debe estar dentro del período (' + periodoDesde + ' a ' + periodoHasta + ').'); }
-                    if (ff && (ff < periodoDesde || ff > periodoHasta)) { ffInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de fin debe estar dentro del período (' + periodoDesde + ' a ' + periodoHasta + ').'); }
-                }
+                // ==== DESACTIVADO TEMPORALMENTE (caso especial) — para reactivar, descomenta este bloque ====
+                // if (periodoDesde && periodoHasta) {
+                //     if (fi && (fi < periodoDesde || fi > periodoHasta)) { fiInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de inicio debe estar dentro del período (' + periodoDesde + ' a ' + periodoHasta + ').'); }
+                //     if (ff && (ff < periodoDesde || ff > periodoHasta)) { ffInput.classList.add('is-invalid'); errores.push('Competencia ' + numAct + ': la fecha de fin debe estar dentro del período (' + periodoDesde + ' a ' + periodoHasta + ').'); }
+                // }
+                // ==== FIN DEL BLOQUE DESACTIVADO ====
                 // La evidencia también se considera cumplida si hay una "sugerencia" heredada de la Bitácora 1
                 // (el placeholder o la imagen semitransparente) y el usuario no la reemplazó.
                 var tieneEvidenciaPropiaOTexto = textoInput.placeholder && textoInput.placeholder !== 'Obligatorio si no subes una imagen';
