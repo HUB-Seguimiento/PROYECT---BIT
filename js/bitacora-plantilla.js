@@ -342,6 +342,10 @@
                 datos.campos.aprendiz_nombre || 'sinnombre',
                 'BIT'
             ];
+            // Si se descargó solo una bitácora puntual (no las 12), se nota en el nombre del archivo.
+            if (datos.bitacoras && datos.bitacoras.length === 1) {
+                partes.push(String(datos.bitacoras[0].numero));
+            }
             var nombre = partes.join(' - ');
             return nombre.replace(/[\\/:*?"<>|]/g, '-');
         }

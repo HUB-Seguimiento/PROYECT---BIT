@@ -534,9 +534,56 @@
                             </div>
                         </div>
 
+                        <!-- Cambiar de bitácora sin tener que subir hasta el Encabezado -->
+                        <div class="card shadow mb-4 no-print">
+                            <div class="card-body d-flex flex-wrap align-items-center">
+                                <label class="mb-0 mr-2 font-weight-bold">Cambiar a la bitácora N°:</label>
+                                <select class="form-control" id="bitacoraNumeroAbajo" style="max-width:110px;">
+                                    <option value="">Seleccione...</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                    <option value="11">11</option>
+                                    <option value="12">12</option>
+                                </select>
+                                <small class="text-muted d-block w-100 mt-2">
+                                    Hace lo mismo que el selector de "Bitácora N°" del Encabezado, arriba del todo — así no hay que subir hasta allá cada vez.
+                                </small>
+                            </div>
+                        </div>
+
                         <!-- Acciones -->
                         <div class="card shadow mb-4 no-print">
-                            <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
+                            <div class="card-body pb-2">
+                                <label class="d-block font-weight-bold mb-2">¿Qué bitácoras quieres incluir en la descarga?</label>
+                                <div class="custom-control custom-checkbox mb-2">
+                                    <input type="checkbox" class="custom-control-input" id="seleccionarTodasBitacoras" checked>
+                                    <label class="custom-control-label" for="seleccionarTodasBitacoras"><strong>Todas (1 a 12)</strong></label>
+                                </div>
+                                <div id="listaCheckboxesBitacoras">
+                                    <div class="custom-control custom-checkbox custom-control-inline"><input type="checkbox" class="custom-control-input bitacora-checkbox" id="bitacoraSel1" value="1" checked><label class="custom-control-label" for="bitacoraSel1">1</label></div>
+                                    <div class="custom-control custom-checkbox custom-control-inline"><input type="checkbox" class="custom-control-input bitacora-checkbox" id="bitacoraSel2" value="2" checked><label class="custom-control-label" for="bitacoraSel2">2</label></div>
+                                    <div class="custom-control custom-checkbox custom-control-inline"><input type="checkbox" class="custom-control-input bitacora-checkbox" id="bitacoraSel3" value="3" checked><label class="custom-control-label" for="bitacoraSel3">3</label></div>
+                                    <div class="custom-control custom-checkbox custom-control-inline"><input type="checkbox" class="custom-control-input bitacora-checkbox" id="bitacoraSel4" value="4" checked><label class="custom-control-label" for="bitacoraSel4">4</label></div>
+                                    <div class="custom-control custom-checkbox custom-control-inline"><input type="checkbox" class="custom-control-input bitacora-checkbox" id="bitacoraSel5" value="5" checked><label class="custom-control-label" for="bitacoraSel5">5</label></div>
+                                    <div class="custom-control custom-checkbox custom-control-inline"><input type="checkbox" class="custom-control-input bitacora-checkbox" id="bitacoraSel6" value="6" checked><label class="custom-control-label" for="bitacoraSel6">6</label></div>
+                                    <div class="custom-control custom-checkbox custom-control-inline"><input type="checkbox" class="custom-control-input bitacora-checkbox" id="bitacoraSel7" value="7" checked><label class="custom-control-label" for="bitacoraSel7">7</label></div>
+                                    <div class="custom-control custom-checkbox custom-control-inline"><input type="checkbox" class="custom-control-input bitacora-checkbox" id="bitacoraSel8" value="8" checked><label class="custom-control-label" for="bitacoraSel8">8</label></div>
+                                    <div class="custom-control custom-checkbox custom-control-inline"><input type="checkbox" class="custom-control-input bitacora-checkbox" id="bitacoraSel9" value="9" checked><label class="custom-control-label" for="bitacoraSel9">9</label></div>
+                                    <div class="custom-control custom-checkbox custom-control-inline"><input type="checkbox" class="custom-control-input bitacora-checkbox" id="bitacoraSel10" value="10" checked><label class="custom-control-label" for="bitacoraSel10">10</label></div>
+                                    <div class="custom-control custom-checkbox custom-control-inline"><input type="checkbox" class="custom-control-input bitacora-checkbox" id="bitacoraSel11" value="11" checked><label class="custom-control-label" for="bitacoraSel11">11</label></div>
+                                    <div class="custom-control custom-checkbox custom-control-inline"><input type="checkbox" class="custom-control-input bitacora-checkbox" id="bitacoraSel12" value="12" checked><label class="custom-control-label" for="bitacoraSel12">12</label></div>
+                                </div>
+                                <small class="text-muted d-block mt-1 mb-2">Solo se valida y se descarga la información de las bitácoras que dejes marcadas.</small>
+                            </div>
+                            <div class="card-body d-flex flex-wrap justify-content-between align-items-center pt-0">
                                 <div>
                                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar bitácora</button>
                                     <button type="button" class="btn btn-outline-secondary" id="btnLimpiarFormulario">
@@ -682,6 +729,18 @@
             calcularPeriodo();
             numeroActual = document.getElementById('bitacoraNumero').value;
             renderizarActividadesPorBitacora(numeroActual);
+            var selectorAbajo = document.getElementById('bitacoraNumeroAbajo');
+            if (selectorAbajo && selectorAbajo.value !== numeroActual) selectorAbajo.value = numeroActual;
+        });
+
+        // El selector de abajo es un espejo del de arriba: cambiarlo dispara exactamente
+        // la misma lógica (con el evento 'change' del selector de arriba), sin duplicar código.
+        document.getElementById('bitacoraNumeroAbajo').addEventListener('change', function () {
+            var selectorArriba = document.getElementById('bitacoraNumero');
+            if (selectorArriba.value !== this.value) {
+                selectorArriba.value = this.value;
+                selectorArriba.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         });
 
         document.getElementById('fechaInicioEtapa').addEventListener('change', function () {
@@ -862,7 +921,8 @@
             datos = datos || {};
             sugerenciaBitacora1 = sugerenciaBitacora1 || {};
             var tieneImagen = !!datos.evidencia_imagen;
-            var usaSugerenciaTexto = !datos.evidencia_texto && !!sugerenciaBitacora1.evidencia_texto;
+            var tieneTexto = !!(datos.evidencia_texto && datos.evidencia_texto.trim());
+            var usaSugerenciaTexto = !tieneTexto && !!sugerenciaBitacora1.evidencia_texto;
             var usaSugerenciaImagen = !tieneImagen && !!sugerenciaBitacora1.evidencia_imagen;
             var descripcionCorta = (competenciaTexto || '(sin competencia todavía)').substring(0, 140);
             return '' +
@@ -891,15 +951,17 @@
                 '  <div class="row">' +
                 '    <div class="form-group col-md-6">' +
                 '      <label class="bitacora-required">Evidencia de cumplimiento (texto)</label>' +
-                '      <textarea class="form-control act-evidencia-texto" rows="2" placeholder="' + escapeHtml(usaSugerenciaTexto ? sugerenciaBitacora1.evidencia_texto : 'Obligatorio si no subes una imagen') + '">' + escapeHtml(datos.evidencia_texto) + '</textarea>' +
+                '      <textarea class="form-control act-evidencia-texto" rows="2"' + (tieneImagen ? ' disabled' : '') + ' placeholder="' + escapeHtml(usaSugerenciaTexto ? sugerenciaBitacora1.evidencia_texto : 'Obligatorio si no subes una imagen') + '">' + escapeHtml(datos.evidencia_texto) + '</textarea>' +
+                '      <small class="text-muted d-block mt-1 nota-bloqueo-texto' + (tieneImagen ? '' : ' d-none') + '"><i class="fas fa-lock"></i> Ya hay una imagen cargada. Quítala si prefieres escribir la evidencia en texto.</small>' +
                 (usaSugerenciaTexto ? '      <small class="text-muted d-block mt-1"><i class="fas fa-magic"></i> Si no escribes nada aquí, se usará la evidencia de la Bitácora 1 al descargar.</small>' : '') +
                 '    </div>' +
                 '    <div class="form-group col-md-6">' +
-                '      <label>Evidencia de cumplimiento (imagen, opcional si escribiste texto)</label>' +
+                '      <label>Evidencia de cumplimiento (imagen)</label>' +
                 '      <div class="custom-file">' +
-                '        <input type="file" class="custom-file-input act-evidencia-imagen-input" accept="image/*">' +
+                '        <input type="file" class="custom-file-input act-evidencia-imagen-input" accept="image/*"' + (tieneTexto ? ' disabled' : '') + '>' +
                 '        <label class="custom-file-label">' + (tieneImagen ? 'Imagen cargada previamente' : 'Seleccionar imagen...') + '</label>' +
                 '      </div>' +
+                '      <small class="text-muted d-block mt-1 nota-bloqueo-imagen' + (tieneTexto ? '' : ' d-none') + '"><i class="fas fa-lock"></i> Ya escribiste la evidencia en texto. Bórrala si prefieres subir una imagen en su lugar.</small>' +
                 '      <div class="mt-2 act-evidencia-imagen-wrapper" style="display:' + (tieneImagen ? 'block' : 'none') + ';">' +
                 '        <img class="img-thumbnail act-evidencia-imagen-preview" style="max-height:90px;" src="' + (datos.evidencia_imagen || '') + '">' +
                 '        <button type="button" class="btn btn-sm btn-outline-danger ml-2 no-print btn-quitar-act-imagen"><i class="fas fa-times"></i> Quitar</button>' +
@@ -977,6 +1039,13 @@
                     reader.onload = function (e) {
                         preview.src = e.target.result;
                         wrapper.style.display = 'block';
+                        // Es imagen O texto, no las dos: al cargar la imagen se bloquea y se
+                        // vacía el campo de texto de esa misma actividad.
+                        var textoEvidencia = bloque.querySelector('.act-evidencia-texto');
+                        textoEvidencia.value = '';
+                        textoEvidencia.disabled = true;
+                        var notaTexto = bloque.querySelector('.nota-bloqueo-texto');
+                        if (notaTexto) notaTexto.classList.remove('d-none');
                         guardarEstado();
                     };
                     reader.readAsDataURL(file);
@@ -994,7 +1063,25 @@
                     preview.src = '';
                     wrapper.style.display = 'none';
                     if (fileLabel) fileLabel.textContent = 'Seleccionar imagen...';
+                    // Al quitar la imagen, se libera de nuevo el campo de texto.
+                    var textoEvidencia = bloque.querySelector('.act-evidencia-texto');
+                    textoEvidencia.disabled = false;
+                    var notaTexto = bloque.querySelector('.nota-bloqueo-texto');
+                    if (notaTexto) notaTexto.classList.add('d-none');
                     guardarEstado();
+                });
+            });
+
+            // Es imagen O texto, no las dos: apenas se escribe texto de evidencia, se bloquea
+            // el campo de imagen de esa misma actividad (y viceversa, ya cableado arriba).
+            contenedor.querySelectorAll('.act-evidencia-texto').forEach(function (textarea) {
+                textarea.addEventListener('input', function () {
+                    var bloque = textarea.closest('.actividad-bloque');
+                    var inputImagen = bloque.querySelector('.act-evidencia-imagen-input');
+                    var notaImagen = bloque.querySelector('.nota-bloqueo-imagen');
+                    var hayTexto = textarea.value.trim().length > 0;
+                    inputImagen.disabled = hayTexto;
+                    if (notaImagen) notaImagen.classList.toggle('d-none', !hayTexto);
                 });
             });
 
@@ -1259,6 +1346,11 @@
             }
         }
 
+        // Lee cuáles bitácoras dejó marcadas la persona para incluir en la descarga.
+        function obtenerBitacorasSeleccionadas() {
+            return Array.from(document.querySelectorAll('.bitacora-checkbox:checked')).map(function (cb) { return parseInt(cb.value, 10); });
+        }
+
         function validarTodoAntesDeGenerar() {
             guardarEstado();
 
@@ -1271,36 +1363,46 @@
             document.querySelectorAll('.is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
             document.getElementById('erroresValidacion').classList.add('d-none');
 
-            var errores = validarCompetencias().concat(validarActividadesVisibles());
+            var seleccionadas = obtenerBitacorasSeleccionadas();
+            if (seleccionadas.length === 0) {
+                mostrarErrores(['Marca al menos una bitácora en "¿Qué bitácoras quieres incluir en la descarga?" antes de continuar.']);
+                return null;
+            }
+
+            var errores = validarCompetencias();
+            if (seleccionadas.indexOf(parseInt(numeroActual, 10)) !== -1) {
+                errores = errores.concat(validarActividadesVisibles());
+            }
 
             var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
-            for (var n = 1; n <= MAX_BITACORAS; n++) {
-                if (String(n) === String(numeroActual)) continue; // esa ya se validó arriba, con resaltado visual
+            seleccionadas.forEach(function (n) {
+                if (String(n) === String(numeroActual)) return; // esa ya se validó arriba, con resaltado visual
                 if (!ESTADO.fechasEntrega || !ESTADO.fechasEntrega[n]) {
                     errores.push('Bitácora ' + n + ': falta la fecha de entrega (se ingresa manualmente en cada bitácora).');
                 }
                 var periodo = periodoParaNumero(fechaInicioEtapa, n);
                 var lista = ESTADO.porBitacora[n] || [];
                 errores = errores.concat(validarActividadesDeBitacora(lista, n, periodo));
-            }
+            });
 
             if (errores.length > 0) {
                 mostrarErrores(errores);
                 return null;
             }
 
-            return recolectarDatosCompletos();
+            return recolectarDatosCompletos(seleccionadas);
         }
 
         // ============================================================
         //  Recolección de los datos completos: combina las competencias (compartidas)
-        //  con la descripción/fechas/evidencia de CADA bitácora (independientes).
+        //  con la descripción/fechas/evidencia de CADA bitácora seleccionada (independientes).
         // ============================================================
-        function recolectarDatosCompletos() {
+        function recolectarDatosCompletos(numerosSeleccionados) {
             var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
             var totalCompetencias = ESTADO.competencias.length;
+            var numeros = numerosSeleccionados && numerosSeleccionados.length ? numerosSeleccionados : obtenerBitacorasSeleccionadas();
             var bitacoras = [];
-            for (var n = 1; n <= MAX_BITACORAS; n++) {
+            numeros.forEach(function (n) {
                 var periodo = periodoParaNumero(fechaInicioEtapa, n);
                 var lista = ESTADO.porBitacora[n] || [];
                 var actividades = [];
@@ -1324,13 +1426,13 @@
                     fecha_entrega: (ESTADO.fechasEntrega && ESTADO.fechasEntrega[n]) || '',
                     actividades: actividades
                 });
-            }
+            });
             // "actividades" a nivel raíz queda como la de la bitácora actualmente seleccionada,
             // por compatibilidad con quien solo necesite un ejemplo rápido (no se usa para generar).
             return {
                 campos: ESTADO.campos,
                 alternativa: ESTADO.alternativa,
-                actividades: (bitacoras[(parseInt(numeroActual, 10) || 1) - 1] || {}).actividades || [],
+                actividades: (bitacoras.find(function (b) { return b.numero === (parseInt(numeroActual, 10) || 1); }) || bitacoras[0] || {}).actividades || [],
                 firmas: ESTADO.firmas,
                 bitacoras: bitacoras
             };
@@ -1665,7 +1767,19 @@
             var errores = validarCompetencias().concat(validarActividadesVisibles());
             if (errores.length > 0) { mostrarErrores(errores); return; }
             guardarEstado();
-            mostrarAviso('Formulario válido. Usa el botón "Descargar formato" para generar las 12 bitácoras en PDF o Excel.', 'Formulario válido');
+            mostrarAviso('Formulario válido. Usa el botón "Descargar formato" para generar en PDF o Excel las bitácoras que hayas marcado.', 'Formulario válido');
+        });
+
+        // Checkbox "Todas (1 a 12)": marca/desmarca las 12 de un solo clic, y se mantiene
+        // sincronizado automáticamente si la persona marca/desmarca alguna individualmente.
+        document.getElementById('seleccionarTodasBitacoras').addEventListener('change', function () {
+            document.querySelectorAll('.bitacora-checkbox').forEach(function (cb) { cb.checked = document.getElementById('seleccionarTodasBitacoras').checked; });
+        });
+        document.querySelectorAll('.bitacora-checkbox').forEach(function (cb) {
+            cb.addEventListener('change', function () {
+                var todasMarcadas = Array.from(document.querySelectorAll('.bitacora-checkbox')).every(function (c) { return c.checked; });
+                document.getElementById('seleccionarTodasBitacoras').checked = todasMarcadas;
+            });
         });
 
         document.getElementById('btnLimpiarFormulario').addEventListener('click', function () {
@@ -1708,6 +1822,8 @@
             calcularPeriodo();
             numeroActual = document.getElementById('bitacoraNumero').value;
             renderizarActividadesPorBitacora(numeroActual);
+            var selectorAbajo = document.getElementById('bitacoraNumeroAbajo');
+            if (selectorAbajo) selectorAbajo.value = numeroActual;
         }
 
         restaurarEstado();
