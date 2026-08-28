@@ -26,6 +26,29 @@
     background-image: linear-gradient(180deg, var(--sena-verde-corporativo) 10%, var(--sena-verde-secundario) 100%) !important;
 }
 
+/* Texto de la barra lateral: más blanco/opaco para que se lea bien sobre el verde
+   (por defecto la plantilla usa un blanco semitransparente, pensado para el azul original). */
+.sidebar-brand-text {
+    color: #ffffff !important;
+}
+.sidebar .nav-item .nav-link {
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+.sidebar .nav-item .nav-link i {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+.sidebar .nav-item .nav-link:hover,
+.sidebar .nav-item .nav-link:focus,
+.sidebar .nav-item.active .nav-link {
+    color: #ffffff !important;
+}
+.sidebar-heading {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+.sidebar hr.sidebar-divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
 /* Textos y encabezados en verde corporativo (antes azul) */
 .text-primary {
     color: var(--sena-verde-corporativo) !important;
