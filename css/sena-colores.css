@@ -1,0 +1,105 @@
+/* ============================================================
+   Colores institucionales del SENA
+   ============================================================
+   Basado en la arquitectura de color oficial de la marca:
+   - Verde corporativo:  #39A900  (color principal del logosímbolo)
+   - Verde secundario:   #007832  (acompaña al verde corporativo)
+   - Gris claro (neutro): #F6F6F6
+   - Blanco:              #FFFFFF
+   - Negro:               #000000
+
+   Aplica solo a la INTERFAZ de esta aplicación (sidebar, botones,
+   enlaces, acentos). El formato de la bitácora que se descarga en
+   PDF/Excel NO usa estos colores: ese debe mantenerse idéntico al
+   formato oficial GFPI-F-147 (negro/gris), que es un documento
+   controlado y no se puede modificar.
+   ============================================================ */
+
+:root {
+    --sena-verde-corporativo: #39A900;
+    --sena-verde-secundario: #007832;
+    --sena-gris-claro: #F6F6F6;
+}
+
+/* Sidebar: gradiente con los dos verdes institucionales en vez del azul por defecto */
+.sidebar.bg-gradient-primary {
+    background-image: linear-gradient(180deg, var(--sena-verde-corporativo) 10%, var(--sena-verde-secundario) 100%) !important;
+}
+
+/* Textos y encabezados en verde corporativo (antes azul) */
+.text-primary {
+    color: var(--sena-verde-corporativo) !important;
+}
+
+/* Botones principales */
+.btn-primary {
+    background-color: var(--sena-verde-corporativo) !important;
+    border-color: var(--sena-verde-corporativo) !important;
+}
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: var(--sena-verde-secundario) !important;
+    border-color: var(--sena-verde-secundario) !important;
+}
+
+/* Botones "outline" */
+.btn-outline-primary {
+    color: var(--sena-verde-corporativo) !important;
+    border-color: var(--sena-verde-corporativo) !important;
+}
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+    background-color: var(--sena-verde-corporativo) !important;
+    border-color: var(--sena-verde-corporativo) !important;
+    color: #fff !important;
+}
+/* Chips/botones de selección múltiple (data-toggle="buttons"): la clase .active es distinta
+   de :active (pseudo-clase), así que necesita su propia regla para pintarse en verde. */
+.btn-outline-primary.active {
+    background-color: var(--sena-verde-corporativo) !important;
+    border-color: var(--sena-verde-corporativo) !important;
+    color: #fff !important;
+}
+
+/* Enlaces de topbar / búsqueda / iconos activos */
+.topbar .nav-item .nav-link:hover,
+.topbar .nav-item .nav-link:focus {
+    color: var(--sena-verde-secundario) !important;
+}
+
+/* Botones de radio/checkbox propios (Bootstrap custom-control) marcados */
+.custom-control-input:checked ~ .custom-control-label::before {
+    background-color: var(--sena-verde-corporativo) !important;
+    border-color: var(--sena-verde-corporativo) !important;
+}
+.custom-control-input:focus ~ .custom-control-label::before {
+    box-shadow: 0 0 0 0.2rem rgba(57, 169, 0, 0.25) !important;
+}
+
+/* Foco en campos de formulario */
+.form-control:focus {
+    border-color: var(--sena-verde-corporativo) !important;
+    box-shadow: 0 0 0 0.2rem rgba(57, 169, 0, 0.25) !important;
+}
+
+/* Franja lateral de tarjetas destacadas, si se usa */
+.border-left-primary {
+    border-left: 0.25rem solid var(--sena-verde-corporativo) !important;
+}
+
+/* Alertas informativas con acento verde en vez de azul */
+.alert-info {
+    background-color: var(--sena-gris-claro) !important;
+    border-color: var(--sena-verde-corporativo) !important;
+    color: #1e5c00 !important;
+}
+
+/* Botón de scroll-to-top */
+.scroll-to-top {
+    background: var(--sena-verde-corporativo) !important;
+}
+.scroll-to-top:hover {
+    background: var(--sena-verde-secundario) !important;
+}

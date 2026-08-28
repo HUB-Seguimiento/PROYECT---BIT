@@ -6,6 +6,7 @@
 
         var DIAS_POR_BITACORA = 15;
         var MAX_BITACORAS = 12;
+        var MESES_ETAPA = 6;
         var MIN_ACTIVIDADES = 3;
 
         function formatFechaInput(d) {
@@ -32,13 +33,44 @@
             return partes[2] + '/' + partes[1] + '/' + partes[0];
         }
 
+        // Suma meses de CALENDARIO (no días fijos) a una fecha, cayendo en el mismo día del
+        // mes de destino — y si ese mes es más corto (ej. Febrero), se ajusta al último día
+        // válido en vez de desbordar al mes siguiente.
+        function sumarMesesCalendario(fecha, meses) {
+            var anio = fecha.getUTCFullYear();
+            var mesTotal = fecha.getUTCMonth() + meses;
+            var anioDestino = anio + Math.floor(mesTotal / 12);
+            var mesDestino = ((mesTotal % 12) + 12) % 12;
+            var ultimoDiaMesDestino = new Date(Date.UTC(anioDestino, mesDestino + 1, 0)).getUTCDate();
+            var dia = Math.min(fecha.getUTCDate(), ultimoDiaMesDestino);
+            return new Date(Date.UTC(anioDestino, mesDestino, dia));
+        }
+
+        // Último día de la etapa productiva completa: 6 meses de CALENDARIO desde el inicio
+        // (mismo día del mes, ajustado si el mes de destino es más corto), menos 1 día porque
+        // el día de inicio ya cuenta como el primer día de la etapa.
+        function finEtapaCalendario(inicioEtapa) {
+            var fin = sumarMesesCalendario(inicioEtapa, MESES_ETAPA);
+            fin.setUTCDate(fin.getUTCDate() - 1);
+            return fin;
+        }
+
+        // Cada bitácora dura 15 días fijos — EXCEPTO la última, que se estira o encoge lo
+        // necesario para que la etapa completa cierre exactamente en la fecha de calendario
+        // de los 6 meses (no en "180 días" a secas, que no siempre cae el mismo día del mes).
         function periodoParaNumero(fechaInicioStr, numero) {
             if (!fechaInicioStr || !numero) return null;
             var inicioEtapa = parseFechaInput(fechaInicioStr);
             var desde = new Date(inicioEtapa);
             desde.setUTCDate(desde.getUTCDate() + (numero - 1) * DIAS_POR_BITACORA);
-            var hasta = new Date(desde);
-            hasta.setUTCDate(hasta.getUTCDate() + DIAS_POR_BITACORA - 1);
+
+            var hasta;
+            if (numero >= MAX_BITACORAS) {
+                hasta = finEtapaCalendario(inicioEtapa);
+            } else {
+                hasta = new Date(desde);
+                hasta.setUTCDate(hasta.getUTCDate() + DIAS_POR_BITACORA - 1);
+            }
             return { desde: formatFechaInput(desde), hasta: formatFechaInput(hasta) };
         }
 
