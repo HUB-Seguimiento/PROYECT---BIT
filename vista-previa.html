@@ -222,8 +222,9 @@
                     evidenciaTexto = listaBitacora1[i].evidencia_texto || '';
                     evidenciaImagen = listaBitacora1[i].evidencia_imagen || null;
                 }
+                var descripcion = act.descripcion || (listaBitacora1[i] ? (listaBitacora1[i].descripcion || '') : '');
                 actividades.push({
-                    descripcion: act.descripcion || '',
+                    descripcion: descripcion,
                     competencias: ESTADO.competencias[i] || '',
                     fecha_inicio: act.fecha_inicio || (periodo ? periodo.desde : ''),
                     fecha_fin: act.fecha_fin || (periodo ? periodo.hasta : ''),

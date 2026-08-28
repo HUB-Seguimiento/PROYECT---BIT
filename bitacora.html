@@ -933,6 +933,7 @@
             var tieneTexto = !!(datos.evidencia_texto && datos.evidencia_texto.trim());
             var usaSugerenciaTexto = !tieneTexto && !!sugerenciaBitacora1.evidencia_texto;
             var usaSugerenciaImagen = !tieneImagen && !!sugerenciaBitacora1.evidencia_imagen;
+            var descripcionVieneDeBitacora1 = !!sugerenciaBitacora1.descripcion && datos.descripcion === sugerenciaBitacora1.descripcion;
             var descripcionCorta = (competenciaTexto || '(sin competencia todavía)').substring(0, 140);
             return '' +
                 '<div class="actividad-bloque border rounded p-3 mb-3" data-index="' + indice + '">' +
@@ -941,6 +942,7 @@
                 '    <div class="form-group col-md-12">' +
                 '      <label class="bitacora-required">Descripción de la actividad realizada</label>' +
                 '      <textarea class="form-control act-descripcion" rows="2" required>' + escapeHtml(datos.descripcion) + '</textarea>' +
+                '      <small class="text-muted d-block mt-1 nota-descripcion-heredada' + (descripcionVieneDeBitacora1 ? '' : ' d-none') + '"><i class="fas fa-magic"></i> Copiada de la Bitácora 1 — puedes editarla libremente; si la dejas así, esta es la que sale en el PDF.</small>' +
                 '    </div>' +
                 '  </div>' +
                 '  <div class="row">' +
@@ -1033,7 +1035,7 @@
                 }
 
                 var datosConDefaults = {
-                    descripcion: datos.descripcion || '',
+                    descripcion: datos.descripcion || sugerencia.descripcion || '',
                     fecha_inicio: datos.fecha_inicio || periodoDesde,
                     fecha_fin: datos.fecha_fin || periodoHasta,
                     evidencia_texto: evidenciaTextoInicial || '',
@@ -1100,6 +1102,16 @@
                     var hayTexto = textarea.value.trim().length > 0;
                     inputImagen.disabled = hayTexto;
                     if (notaImagen) notaImagen.classList.toggle('d-none', !hayTexto);
+                });
+            });
+
+            // Apenas la persona edita la descripción (que se copió de la Bitácora 1), se oculta
+            // el aviso — ya es "suya", editada a propósito para esta bitácora en particular.
+            contenedor.querySelectorAll('.act-descripcion').forEach(function (textarea) {
+                textarea.addEventListener('input', function () {
+                    var bloque = textarea.closest('.actividad-bloque');
+                    var nota = bloque.querySelector('.nota-descripcion-heredada');
+                    if (nota) nota.classList.add('d-none');
                 });
             });
 
@@ -1261,6 +1273,17 @@
             return { texto: deBitacora1.evidencia_texto || '', imagen: deBitacora1.evidencia_imagen || null };
         }
 
+        // Igual que la evidencia: la descripción de la actividad que se escriba en la Bitácora 1
+        // se replica como valor por defecto (editable) en las demás bitácoras. Si una bitácora ya
+        // tiene su propia descripción (porque el usuario la cambió), esa prevalece siempre.
+        function obtenerDescripcionEfectiva(numero, indice) {
+            var propia = (ESTADO.porBitacora[numero] || [])[indice] || {};
+            if (propia.descripcion) return propia.descripcion;
+            if (String(numero) === '1') return '';
+            var deBitacora1 = (ESTADO.porBitacora['1'] || [])[indice] || {};
+            return deBitacora1.descripcion || '';
+        }
+
         // Valida las actividades (descripción/fechas/evidencia) de UNA bitácora específica.
         // Si se pasa periodo, valida que las fechas caigan dentro de ese período.
         // ⚠️ AVISO TEMPORAL (caso especial en curso): dentro de esta función, la validación que
@@ -1271,12 +1294,12 @@
             (lista || []).forEach(function (act, idx) {
                 var numAct = idx + 1;
                 var prefijo = 'Bitácora ' + numeroBitacora + ', competencia ' + numAct + ': ';
-                var desc = (act.descripcion || '').trim();
+                var desc = (obtenerDescripcionEfectiva(numeroBitacora, idx) || '').trim();
                 var fi = act.fecha_inicio;
                 var ff = act.fecha_fin;
                 var evidenciaEfectiva = obtenerEvidenciaEfectiva(numeroBitacora, idx);
 
-                if (!desc) errores.push(prefijo + 'la descripción de la actividad es obligatoria.');
+                if (!desc) errores.push(prefijo + 'la descripción de la actividad es obligatoria (o diligéncela en la Bitácora 1, que se hereda automáticamente).');
                 if (!fi || !ff) errores.push(prefijo + 'faltan las fechas de la actividad.');
                 if (fi && ff && fi > ff) errores.push(prefijo + 'la fecha de fin no puede ser anterior a la de inicio.');
                 // ==== DESACTIVADO TEMPORALMENTE (caso especial) — para reactivar, descomenta estas 2 líneas ====
@@ -1422,7 +1445,7 @@
                     var act = lista[i] || {};
                     var evidenciaEfectiva = obtenerEvidenciaEfectiva(n, i);
                     actividades.push({
-                        descripcion: act.descripcion || '',
+                        descripcion: obtenerDescripcionEfectiva(n, i),
                         competencias: ESTADO.competencias[i] || '',
                         fecha_inicio: act.fecha_inicio || (periodo ? periodo.desde : ''),
                         fecha_fin: act.fecha_fin || (periodo ? periodo.hasta : ''),
