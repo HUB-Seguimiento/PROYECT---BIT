@@ -600,16 +600,9 @@
                                         <i class="fas fa-broom"></i> Limpiar formulario
                                     </button>
                                 </div>
-                                <div class="dropdown">
-                                    <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdownDescargar"
-                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <i class="fas fa-download"></i> Descargar formato
-                                    </button>
-                                    <div class="dropdown-menu" aria-labelledby="dropdownDescargar">
-                                        <a class="dropdown-item" href="#" id="btnDescargarPDF"><i class="fas fa-file-pdf mr-2"></i>PDF</a>
-                                        <a class="dropdown-item" href="#" id="btnDescargarExcel"><i class="fas fa-file-excel mr-2"></i>Excel (.xlsx)</a>
-                                    </div>
-                                </div>
+                                <button type="button" class="btn btn-outline-primary" id="btnDescargarPDF">
+                                    <i class="fas fa-file-pdf"></i> Descargar PDF
+                                </button>
                             </div>
                             <div class="card-body pt-0">
                                 <small class="text-muted">
@@ -685,8 +678,7 @@
     <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
     <script src="js/sb-admin-2.min.js"></script>
 
-    <!-- Librerías para generar los documentos reales (Excel, PDF) -->
-    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <!-- Librerías para generar el PDF -->
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1505,217 +1497,6 @@
         }
 
         // ============================================================
-        //  EXCEL — construido con ExcelJS (a diferencia de SheetJS gratuito,
-        //  esta librería sí escribe estilos de celda reales: negrilla, bordes,
-        //  fondos). Mismo diseño visual que el PDF (barras negras, encabezados).
-        // ============================================================
-        var BORDE_FINO_XJ = { style: 'thin', color: { argb: 'FF000000' } };
-        var BORDE_COMPLETO_XJ = { top: BORDE_FINO_XJ, bottom: BORDE_FINO_XJ, left: BORDE_FINO_XJ, right: BORDE_FINO_XJ };
-
-        function aplicarEstiloBarraNegra(celda) {
-            celda.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } };
-            celda.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-            celda.border = BORDE_COMPLETO_XJ;
-        }
-        function aplicarEstiloEtiqueta(celda) {
-            celda.font = { bold: true };
-            celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
-            celda.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-            celda.border = BORDE_COMPLETO_XJ;
-        }
-        function aplicarEstiloValor(celda, alinear) {
-            celda.alignment = { horizontal: alinear || 'center', vertical: 'middle', wrapText: true };
-            celda.border = BORDE_COMPLETO_XJ;
-        }
-
-        // Construye la hoja de una bitácora completa usando la API de ExcelJS.
-        function construirHojaExcelBitacora(wb, datos, bit, nombreHoja, logoImageId) {
-            var c = datos.campos;
-            var ws = wb.addWorksheet(nombreHoja);
-            ws.columns = [{ width: 26 }, { width: 22 }, { width: 20 }, { width: 20 }, { width: 26 }, { width: 26 }];
-
-            var filaActual = 1;
-            function barra(texto) {
-                ws.mergeCells(filaActual, 1, filaActual, 6);
-                var cel = ws.getCell(filaActual, 1);
-                cel.value = texto;
-                aplicarEstiloBarraNegra(cel);
-                filaActual++;
-            }
-            function filaEtiquetas(etiquetas) {
-                etiquetas.forEach(function (t, i) {
-                    var cel = ws.getCell(filaActual, i + 1);
-                    cel.value = t;
-                    aplicarEstiloEtiqueta(cel);
-                });
-                filaActual++;
-            }
-            function filaValores(valores, alinear) {
-                valores.forEach(function (v, i) {
-                    var cel = ws.getCell(filaActual, i + 1);
-                    cel.value = v || '';
-                    aplicarEstiloValor(cel, alinear);
-                });
-                filaActual++;
-            }
-            function fusionarUltimasDos(colIni, colFin) {
-                ws.mergeCells(filaActual - 2, colIni, filaActual - 2, colFin);
-                ws.mergeCells(filaActual - 1, colIni, filaActual - 1, colFin);
-            }
-            function espacio() { filaActual++; }
-
-            // Encabezado: logo institucional (izquierda) + código/versión (derecha), 2 filas de alto,
-            // igual que en el formato oficial.
-            ws.getRow(1).height = 30;
-            ws.getRow(2).height = 30;
-            ws.mergeCells(1, 1, 2, 4);
-            ws.getCell(1, 1).border = BORDE_COMPLETO_XJ;
-            if (logoImageId !== null && logoImageId !== undefined) {
-                // Centrado calculado a partir del ancho real de las columnas A-D (en px aprox)
-                // y el alto de las 2 filas del encabezado, para que no quede pegado a la esquina.
-                ws.addImage(logoImageId, { tl: { col: 1.38, row: 0.25 }, ext: { width: 140, height: 60 } });
-            }
-            ws.mergeCells(1, 5, 1, 6);
-            ws.getCell(1, 5).value = 'Código: GFPI-F-147';
-            aplicarEstiloEtiqueta(ws.getCell(1, 5));
-            ws.mergeCells(2, 5, 2, 6);
-            ws.getCell(2, 5).value = 'Versión: 05';
-            aplicarEstiloEtiqueta(ws.getCell(2, 5));
-            filaActual = 3;
-
-            barra('FORMATO BITÁCORA DE SEGUIMIENTO ETAPA PRODUCTIVA (GFPI-F-147)');
-            espacio();
-
-            filaEtiquetas(['Bitácora N°', 'Período Desde', '', 'Período Hasta', '', '']);
-            ws.mergeCells(filaActual - 1, 2, filaActual - 1, 3);
-            ws.mergeCells(filaActual - 1, 4, filaActual - 1, 6);
-            filaValores([bit.numero, bit.periodoDesde, '', bit.periodoHasta, '', '']);
-            ws.mergeCells(filaActual - 1, 2, filaActual - 1, 3);
-            ws.mergeCells(filaActual - 1, 4, filaActual - 1, 6);
-            espacio();
-
-            barra('Datos del aprendiz');
-            filaEtiquetas(['Nombre completo', 'Tipo de documento', 'N° de identificación', 'Teléfono', 'Ficha', 'Programa']);
-            filaValores([c.aprendiz_nombre, c.aprendiz_tipo_doc, c.aprendiz_num_doc, c.aprendiz_telefono, c.aprendiz_ficha, c.aprendiz_programa], 'left');
-            filaEtiquetas(['Correo institucional', 'Correo personal', 'Dirección', 'Modalidad de formación', 'Modalidad de ejecución', 'País (si aplica)']);
-            filaValores([c.aprendiz_correo_institucional, c.aprendiz_correo_personal, c.aprendiz_direccion, c.aprendiz_modalidad_formacion, c.modalidad_ejecucion, c.etapa_pais], 'left');
-            espacio();
-
-            barra('Datos del ente co-formador');
-            filaEtiquetas(['Empresa', '', 'NIT', 'Dirección', '', '']);
-            filaValores([c.empresa_nombre, '', c.empresa_nit, c.empresa_direccion, '', ''], 'left');
-            fusionarUltimasDos(1, 2); fusionarUltimasDos(4, 6);
-            espacio();
-
-            barra('Datos de la persona encargada (co-formador)');
-            filaEtiquetas(['Nombre', '', 'Cargo', 'Teléfono', 'Correo', '']);
-            filaValores([c.coformador_nombre, '', c.coformador_cargo, c.coformador_telefono, c.coformador_correo, ''], 'left');
-            fusionarUltimasDos(1, 2); fusionarUltimasDos(5, 6);
-            espacio();
-
-            barra('Datos del instructor de seguimiento');
-            filaEtiquetas(['Nombre', '', '', 'Correo', '', '']);
-            filaValores([c.instructor_nombre, '', '', c.instructor_correo, '', ''], 'left');
-            fusionarUltimasDos(1, 3); fusionarUltimasDos(4, 6);
-            espacio();
-
-            barra('Alternativa de etapa productiva');
-            ws.mergeCells(filaActual, 1, filaActual, 6);
-            var celAlt = ws.getCell(filaActual, 1);
-            celAlt.value = datos.alternativa || '';
-            aplicarEstiloValor(celAlt, 'center');
-            filaActual++;
-            espacio();
-
-            filaEtiquetas(['Descripción de la actividad', 'Competencias aplicadas', 'Fecha inicio', 'Fecha fin', 'Evidencia de cumplimiento', 'Observaciones']);
-            // Ese encabezado de actividades va con barra negra (no gris), como en el PDF:
-            for (var col = 1; col <= 6; col++) aplicarEstiloBarraNegra(ws.getCell(filaActual - 1, col));
-
-            var totalFilasAct = Math.max(5, bit.actividades.length);
-            for (var i = 0; i < totalFilasAct; i++) {
-                var act = bit.actividades[i] || {};
-                var evidenciaTexto = act.evidencia_texto || (act.evidencia_imagen ? '[Imagen adjunta: ver el PDF de esta bitácora]' : '');
-                filaValores([act.descripcion, act.competencias, act.fecha_inicio, act.fecha_fin, evidenciaTexto, act.observaciones], 'left');
-            }
-            espacio();
-
-            barra('Información afiliación a la ARL');
-            filaEtiquetas(['¿Afiliado a la ARL?', 'Nivel de riesgo', '¿Corresponde a las actividades?', '', '¿Cuenta con EPP?', '']);
-            filaValores([c.arl_afiliado, c.arl_nivel_riesgo, c.arl_nivel_corresponde, '', c.arl_epp, '']);
-            fusionarUltimasDos(3, 4); fusionarUltimasDos(5, 6);
-            espacio();
-
-            barra('Firmas y entrega');
-            filaEtiquetas(['Firma del aprendiz', '', 'Fecha entrega bitácora', '', '', '']);
-            ws.getRow(filaActual).height = 55; // fila más alta para que quepa la imagen de la firma
-            var filaFirmaAprendiz = filaActual;
-            filaValores(['', '', bit.fecha_entrega, '', '', '']);
-            fusionarUltimasDos(1, 2); fusionarUltimasDos(3, 4); fusionarUltimasDos(5, 6);
-
-            filaEtiquetas(['Firma del instructor de seguimiento', '', '', 'Firma del ente co-formador', '', '']);
-            ws.getRow(filaActual).height = 55;
-            var filaFirmaInstructorCoformador = filaActual;
-            filaValores(['', '', '', '', '', '']);
-            fusionarUltimasDos(1, 3); fusionarUltimasDos(4, 6);
-
-            function incrustarFirma(dataUrlFirma, fila, colInicio) {
-                if (!dataUrlFirma) {
-                    ws.getCell(fila, colInicio).value = '(sin firma)';
-                    return;
-                }
-                var ext = 'png';
-                if (dataUrlFirma.indexOf('image/jpeg') !== -1 || dataUrlFirma.indexOf('image/jpg') !== -1) ext = 'jpeg';
-                else if (dataUrlFirma.indexOf('image/gif') !== -1) ext = 'gif';
-                var idImg = wb.addImage({ base64: dataUrlFirma, extension: ext });
-                ws.addImage(idImg, { tl: { col: colInicio - 1 + 0.2, row: fila - 1 + 0.1 }, ext: { width: 120, height: 45 } });
-            }
-            incrustarFirma(datos.firmas.firmaAprendiz, filaFirmaAprendiz, 1);
-            incrustarFirma(datos.firmas.firmaInstructor, filaFirmaInstructorCoformador, 1);
-            incrustarFirma(datos.firmas.firmaCoformador, filaFirmaInstructorCoformador, 4);
-
-            return ws;
-        }
-
-        function generarExcel(datos) {
-            function continuarConLogoExcel(dataUrlLogo) {
-                try {
-                    var wb = new ExcelJS.Workbook();
-                    var logoImageId = null;
-                    if (dataUrlLogo) {
-                        logoImageId = wb.addImage({ base64: dataUrlLogo, extension: 'png' });
-                    }
-
-                    datos.bitacoras.forEach(function (bit) {
-                        construirHojaExcelBitacora(wb, datos, bit, 'Bitacora ' + bit.numero, logoImageId);
-                    });
-
-                    wb.xlsx.writeBuffer().then(function (buffer) {
-                        var blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                        descargarBlob(blob, construirNombreArchivo(datos) + '.xlsx');
-                    }).catch(function (err) {
-                        console.error('Error generando Excel:', err);
-                        mostrarAviso('No se pudo generar el Excel: ' + err.message, 'Error al generar el Excel');
-                    });
-                } catch (err) {
-                    console.error('Error generando Excel:', err);
-                    mostrarAviso('No se pudo generar el Excel: ' + err.message, 'Error al generar el Excel');
-                }
-            }
-
-            fetch('img/logo_SENA.png').then(function (r) {
-                if (!r.ok) throw new Error('no encontrado');
-                return r.blob();
-            }).then(function (blob) {
-                var reader = new FileReader();
-                reader.onload = function () { continuarConLogoExcel(reader.result); };
-                reader.onerror = function () { continuarConLogoExcel(null); };
-                reader.readAsDataURL(blob);
-            }).catch(function () { continuarConLogoExcel(null); });
-        }
-
-
-        // ============================================================
         //  PDF — réplica visual del formato oficial (barras, tablas, casillas),
         //  1 imagen/página por bitácora. Se arma el HTML con el mismo layout
         //  del formato real y se rasteriza con html2canvas para incrustarlo en el PDF.
@@ -1788,12 +1569,6 @@
             if (!datos) return;
             generarPDF(datos);
         });
-        document.getElementById('btnDescargarExcel').addEventListener('click', function (e) {
-            e.preventDefault();
-            var datos = validarTodoAntesDeGenerar();
-            if (!datos) return;
-            generarExcel(datos);
-        });
 
         document.getElementById('formBitacora').addEventListener('submit', function (e) {
             e.preventDefault();
@@ -1803,7 +1578,7 @@
             var errores = validarCompetencias().concat(validarActividadesVisibles());
             if (errores.length > 0) { mostrarErrores(errores); return; }
             guardarEstado();
-            mostrarAviso('Formulario válido. Usa el botón "Descargar formato" para generar en PDF o Excel las bitácoras que hayas marcado.', 'Formulario válido');
+            mostrarAviso('Formulario válido. Usa el botón "Descargar PDF" para generar las bitácoras que hayas marcado.', 'Formulario válido');
         });
 
         // Checkbox "Todas (1 a 12)": marca/desmarca las 12 de un solo clic, y se mantiene
