@@ -333,14 +333,17 @@
                 '<div style="text-align:center;font-size:7.5px;font-style:italic;padding:4px 2px;"><strong>Aprendiz:</strong> recuerde diligenciar completamente el formato de bitácora y entregarlo o cargarlo al espacio asignado para este</div>' +
 
                 // Firmas: Aprendiz + Fecha (B-E / F-I), Instructor + Co-formador (B-E / F-I)
+                // Cada línea de firma es un <div> independiente con margen a los lados, para que
+                // NO se junte visualmente con la línea de la celda de al lado (4 líneas separadas,
+                // no 2 líneas corridas de punta a punta).
                 tablaGrid(
                     '<tr>' +
                     celdaLibre(bloqueFirma(datos.firmas.firmaAprendiz), 4, 1, 'height:50px;border:0;vertical-align:bottom;') +
                     celdaLibre(escapeHtml(bit.fecha_entrega || ''), 4, 1, 'border:0;vertical-align:bottom;') +
                     '</tr>' +
                     '<tr>' +
-                    celdaLibre('Firma de la persona con rol de aprendiz', 4, 1, 'border:0;border-top:1px solid #000;font-size:7.5px;') +
-                    celdaLibre('Fecha entrega bitácora', 4, 1, 'border:0;border-top:1px solid #000;font-size:7.5px;') +
+                    celdaLibre('<div style="border-top:1px solid #000;margin:0 10px;padding-top:2px;">Firma de la persona con rol de aprendiz</div>', 4, 1, 'border:0;font-size:7.5px;padding:0 2px;') +
+                    celdaLibre('<div style="border-top:1px solid #000;margin:0 10px;padding-top:2px;">Fecha entrega bitácora</div>', 4, 1, 'border:0;font-size:7.5px;padding:0 2px;') +
                     '</tr>' +
                     '<tr><td colspan="8" style="border:0;height:10px;"></td></tr>' +
                     '<tr>' +
@@ -348,8 +351,8 @@
                     celdaLibre(bloqueFirma(datos.firmas.firmaCoformador), 4, 1, 'border:0;vertical-align:bottom;') +
                     '</tr>' +
                     '<tr>' +
-                    celdaLibre('Firma del instructor de seguimiento', 4, 1, 'border:0;border-top:1px solid #000;font-size:7.5px;') +
-                    celdaLibre('Firma del ente co-formador', 4, 1, 'border:0;border-top:1px solid #000;font-size:7.5px;') +
+                    celdaLibre('<div style="border-top:1px solid #000;margin:0 10px;padding-top:2px;">Firma del instructor de seguimiento</div>', 4, 1, 'border:0;font-size:7.5px;padding:0 2px;') +
+                    celdaLibre('<div style="border-top:1px solid #000;margin:0 10px;padding-top:2px;">Firma del ente co-formador</div>', 4, 1, 'border:0;font-size:7.5px;padding:0 2px;') +
                     '</tr>',
                     false
                 ) +
