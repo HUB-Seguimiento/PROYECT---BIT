@@ -215,6 +215,7 @@
             var listaBitacora1 = String(numero) !== '1' ? ((ESTADO.porBitacora || {})['1'] || []) : [];
             var actividades = [];
             for (var i = 0; i < totalCompetencias; i++) {
+                if (!ESTADO.competencias[i] || !ESTADO.competencias[i].trim()) continue; // sin competencia -> no se muestra
                 var act = lista[i] || {};
                 var evidenciaTexto = act.evidencia_texto || '';
                 var evidenciaImagen = act.evidencia_imagen || null;

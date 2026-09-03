@@ -381,7 +381,8 @@
                             </div>
                             <div class="card-body">
                                 <p class="text-muted small">
-                                    Mínimo 3 competencias (pueden repetirse si corresponde). Estas vienen del programa de formación y
+                                    Se muestran 3 espacios porque lo ideal son 3 competencias, pero no siempre aplica — con diligenciar
+                                    <strong>al menos 1</strong> puedes continuar (pueden repetirse si corresponde). Estas vienen del programa de formación y
                                     <strong>no cambian</strong> con el tiempo, así que se llenan <strong>una sola vez</strong> para las 12 bitácoras.
                                 </p>
                                 <div id="contenedorCompetencias"></div>
@@ -827,17 +828,21 @@
             var contenedor = document.getElementById('contenedorActividadesPorBitacora');
             var bloques = contenedor.querySelectorAll('.actividad-bloque');
             if (bloques.length === 0) return;
-            var lista = [];
+            // Se guarda por su índice real (data-index), no por el orden en que aparecen en
+            // pantalla — porque ahora algunos índices se saltan si su competencia quedó vacía,
+            // y guardar por posición desalinearía los datos con la competencia equivocada.
+            var lista = ESTADO.porBitacora[numero] ? ESTADO.porBitacora[numero].slice() : [];
             bloques.forEach(function (bloque) {
+                var idx = parseInt(bloque.getAttribute('data-index'), 10);
                 var imgPreview = bloque.querySelector('.act-evidencia-imagen-preview');
-                lista.push({
+                lista[idx] = {
                     descripcion: bloque.querySelector('.act-descripcion').value,
                     fecha_inicio: bloque.querySelector('.act-fecha-inicio').value,
                     fecha_fin: bloque.querySelector('.act-fecha-fin').value,
                     evidencia_texto: bloque.querySelector('.act-evidencia-texto').value,
                     evidencia_imagen: (imgPreview && imgPreview.src && imgPreview.src.indexOf('data:') === 0) ? imgPreview.src : null,
                     observaciones: bloque.querySelector('.act-observaciones').value
-                });
+                };
             });
             ESTADO.porBitacora[numero] = lista;
         }
@@ -870,8 +875,8 @@
             return '' +
                 '<div class="competencia-bloque border rounded p-2 mb-2 d-flex align-items-start" data-index="' + indice + '">' +
                 '  <div class="flex-grow-1 mr-2">' +
-                '    <label class="bitacora-required mb-1">Competencia ' + (indice + 1) + '</label>' +
-                '    <textarea class="form-control competencia-texto" rows="2" required>' + escapeHtml(valor) + '</textarea>' +
+                '    <label class="mb-1">Competencia ' + (indice + 1) + '</label>' +
+                '    <textarea class="form-control competencia-texto" rows="2">' + escapeHtml(valor) + '</textarea>' +
                 '  </div>' +
                 '  <button type="button" class="btn btn-sm btn-danger btnRemoveCompetencia no-print mt-4"><i class="fas fa-trash"></i></button>' +
                 '</div>';
@@ -897,6 +902,13 @@
                 }
                 bloque.remove();
                 renumerarCompetencias();
+                guardarEstado();
+                renderizarActividadesPorBitacora(numeroActual);
+            });
+            // Al editar el texto de una competencia, se refleja de inmediato en la sección de
+            // actividades: si pasa de vacía a diligenciada aparece su bloque de actividad, si
+            // se vacía desaparece, y si solo cambia el texto se actualiza la referencia.
+            bloque.querySelector('.competencia-texto').addEventListener('input', function () {
                 guardarEstado();
                 renderizarActividadesPorBitacora(numeroActual);
             });
@@ -930,7 +942,10 @@
             var descripcionCorta = (competenciaTexto || '(sin competencia todavía)').substring(0, 140);
             return '' +
                 '<div class="actividad-bloque border rounded p-3 mb-3" data-index="' + indice + '">' +
-                '  <div class="font-weight-bold text-gray-700 mb-2">Competencia ' + (indice + 1) + ': <span class="font-weight-normal">' + escapeHtml(descripcionCorta) + '</span></div>' +
+                '  <div class="mb-2">' +
+                '    <div class="font-weight-bold text-gray-700">Actividad ' + (indice + 1) + '</div>' +
+                '    <div class="small text-muted"><i class="fas fa-info-circle"></i> Competencia asociada (referencia, no se edita aquí): <span class="competencia-ref-texto">' + escapeHtml(descripcionCorta) + '</span></div>' +
+                '  </div>' +
                 '  <div class="row">' +
                 '    <div class="form-group col-md-12">' +
                 '      <label class="bitacora-required">Descripción de la actividad realizada</label>' +
@@ -1015,7 +1030,9 @@
             var guardadasBitacora1 = String(numero) !== '1' ? (ESTADO.porBitacora['1'] || []) : [];
 
             var html = '';
+            var huboVacias = false;
             for (var i = 0; i < totalCompetencias; i++) {
+                if (!competenciasTexto[i] || !competenciasTexto[i].trim()) { huboVacias = true; continue; } // sin competencia -> sin actividad ligada
                 var datos = guardadas[i] || {};
                 var sugerencia = guardadasBitacora1[i] || {};
 
@@ -1036,6 +1053,9 @@
                     observaciones: datos.observaciones || ''
                 };
                 html += construirBloqueActividadBitacoraHTML(i, competenciasTexto[i], datosConDefaults, sugerencia);
+            }
+            if (huboVacias) {
+                html = '<div class="alert alert-light border small mb-3"><i class="fas fa-info-circle"></i> Solo se piden actividades para las competencias que sí diligenciaste — deja una competencia vacía si no aplica.</div>' + html;
             }
             contenedor.innerHTML = html;
 
@@ -1238,19 +1258,20 @@
         //  Validación
         // ============================================================
         // Valida las competencias (plantilla, una sola vez): mínimo 3, sin repetir.
+        // Lo ideal son las 3 competencias (por eso siempre se muestran 3 espacios), pero no
+        // siempre aplica — con que quede al menos 1 diligenciada es suficiente para continuar.
+        var MIN_COMPETENCIAS_LLENAS = 1;
+
         function validarCompetencias() {
             var errores = [];
             var bloques = Array.from(document.querySelectorAll('#contenedorCompetencias .competencia-bloque'));
             var completas = 0;
-            bloques.forEach(function (bloque, idx) {
+            bloques.forEach(function (bloque) {
                 var input = bloque.querySelector('.competencia-texto');
-                var valor = input.value.trim();
-                if (!valor) { input.classList.add('is-invalid'); errores.push('Competencia ' + (idx + 1) + ': es obligatoria.'); return; }
-                // Las competencias SÍ pueden repetirse (pueden coincidir entre actividades distintas);
-                // solo se exige que no estén vacías.
-                completas++;
+                if (input.value.trim()) completas++;
+                // Los espacios vacíos ya NO se marcan como error: son opcionales si no aplican.
             });
-            if (completas < MIN_ACTIVIDADES) errores.push('Debe registrar al menos ' + MIN_ACTIVIDADES + ' competencias.');
+            if (completas < MIN_COMPETENCIAS_LLENAS) errores.push('Debe diligenciar al menos ' + MIN_COMPETENCIAS_LLENAS + ' competencia.');
             return errores;
         }
 
@@ -1284,7 +1305,10 @@
         // comentada (no borrada). Busca "DESACTIVADO TEMPORALMENTE" más abajo para reactivarla.
         function validarActividadesDeBitacora(lista, numeroBitacora, periodo) {
             var errores = [];
-            (lista || []).forEach(function (act, idx) {
+            lista = lista || [];
+            ESTADO.competencias.forEach(function (competenciaTexto, idx) {
+                if (!competenciaTexto || !competenciaTexto.trim()) return; // sin competencia -> sin actividad ligada, no se valida
+                var act = lista[idx] || {};
                 var numAct = idx + 1;
                 var prefijo = 'Bitácora ' + numeroBitacora + ', competencia ' + numAct + ': ';
                 var desc = (obtenerDescripcionEfectiva(numeroBitacora, idx) || '').trim();
@@ -1435,6 +1459,7 @@
                 var lista = ESTADO.porBitacora[n] || [];
                 var actividades = [];
                 for (var i = 0; i < totalCompetencias; i++) {
+                    if (!ESTADO.competencias[i] || !ESTADO.competencias[i].trim()) continue; // sin competencia -> no se incluye en el documento
                     var act = lista[i] || {};
                     var evidenciaEfectiva = obtenerEvidenciaEfectiva(n, i);
                     actividades.push({
