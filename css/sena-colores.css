@@ -10,7 +10,7 @@
 
    Aplica solo a la INTERFAZ de esta aplicación (sidebar, botones,
    enlaces, acentos). El formato de la bitácora que se descarga en
-   PDF NO usa estos colores: ese debe mantenerse idéntico al
+   PDF/Excel NO usa estos colores: ese debe mantenerse idéntico al
    formato oficial GFPI-F-147 (negro/gris), que es un documento
    controlado y no se puede modificar.
    ============================================================ */
@@ -125,4 +125,37 @@
 }
 .scroll-to-top:hover {
     background: var(--sena-verde-secundario) !important;
+}
+
+/* ============================================================
+   Sidebar fijo al hacer scroll
+   ============================================================
+   Por defecto, la plantilla pone el sidebar y el contenido como dos
+   columnas que se desplazan juntas: al bajar en un formulario largo,
+   el sidebar (con los enlaces a Inicio/Bitacora/Vista Previa/Ayuda)
+   se pierde de vista. Esto lo fija en pantalla en computador/tablet,
+   para no tener que subir hasta arriba cada vez que se quiere cambiar
+   de sección. En celular se deja el comportamiento original (menú
+   colapsable), ya que ahí el sidebar ya funciona distinto por defecto.
+   ============================================================ */
+@media (min-width: 768px) {
+    .sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        overflow-y: auto;
+        z-index: 100;
+    }
+    #content-wrapper {
+        margin-left: 14rem; /* mismo ancho que el sidebar en pantallas grandes */
+    }
+    /* Si el usuario colapsa el sidebar con el botón de flecha, el contenido
+       recupera todo el ancho para no dejar un espacio vacío a la izquierda. */
+    #wrapper.toggled #content-wrapper {
+        margin-left: 0;
+    }
+    #wrapper.toggled .sidebar {
+        margin-left: -14rem;
+    }
 }
