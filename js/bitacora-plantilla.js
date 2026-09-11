@@ -164,8 +164,8 @@
                 filasActividades += '<tr>' +
                     celdaValor(act.descripcion, 'center', 2) +
                     celdaValor(act.competencias, 'center', 2) +
-                    celdaValor(act.fecha_inicio, 'center', 1) +
-                    celdaValor(act.fecha_fin, 'center', 1) +
+                    celdaValor(formatearFechaDDMMYYYY(act.fecha_inicio), 'center', 1) +
+                    celdaValor(formatearFechaDDMMYYYY(act.fecha_fin), 'center', 1) +
                     celdaLibre(contenidoEvidencia, 1) +
                     celdaValor(act.observaciones, 'center', 1) +
                     '</tr>';
