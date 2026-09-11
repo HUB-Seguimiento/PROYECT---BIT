@@ -624,7 +624,7 @@
             <footer class="sticky-footer bg-white no-print">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; Your Website 2026</span>
+                        <span>Copyright &copy; Your Website 2021</span>
                     </div>
                 </div>
             </footer>
@@ -1315,6 +1315,24 @@
             return deBitacora1.descripcion || '';
         }
 
+        // Fecha de entrega "efectiva": la que el usuario haya guardado, o si nunca visitó esa
+        // bitácora, la automática (último día del período) — el cálculo es el mismo sin importar
+        // si la persona llegó a ver esa bitácora en pantalla o no.
+        function obtenerFechaEntregaEfectiva(numero, periodo) {
+            var guardada = ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero];
+            if (guardada) return guardada;
+            return periodo ? periodo.hasta : '';
+        }
+
+        // Fechas de una actividad "efectivas": si el usuario nunca visitó esa bitácora, se
+        // completan solas con el período de esa bitácora (igual que ya pasa al abrirla en pantalla).
+        function obtenerFechasActividadEfectivas(act, periodo) {
+            return {
+                fecha_inicio: (act && act.fecha_inicio) || (periodo ? periodo.desde : ''),
+                fecha_fin: (act && act.fecha_fin) || (periodo ? periodo.hasta : '')
+            };
+        }
+
         // Valida las actividades (descripción/fechas/evidencia) de UNA bitácora específica.
         // Si se pasa periodo, valida que las fechas caigan dentro de ese período.
         // ⚠️ AVISO TEMPORAL (caso especial en curso): dentro de esta función, la validación que
@@ -1329,8 +1347,9 @@
                 var numAct = idx + 1;
                 var prefijo = 'Bitácora ' + numeroBitacora + ', competencia ' + numAct + ': ';
                 var desc = (obtenerDescripcionEfectiva(numeroBitacora, idx) || '').trim();
-                var fi = act.fecha_inicio;
-                var ff = act.fecha_fin;
+                var fechasEfectivas = obtenerFechasActividadEfectivas(act, periodo);
+                var fi = fechasEfectivas.fecha_inicio;
+                var ff = fechasEfectivas.fecha_fin;
                 var evidenciaEfectiva = obtenerEvidenciaEfectiva(numeroBitacora, idx);
 
                 if (!desc) errores.push(prefijo + 'la descripción de la actividad es obligatoria (o diligéncela en la Bitácora 1, que se hereda automáticamente).');
@@ -1451,9 +1470,6 @@
             var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
             seleccionadas.forEach(function (n) {
                 if (String(n) === String(numeroActual)) return; // esa ya se validó arriba, con resaltado visual
-                if (!ESTADO.fechasEntrega || !ESTADO.fechasEntrega[n]) {
-                    errores.push('Bitácora ' + n + ': falta la fecha de entrega (se ingresa manualmente en cada bitácora).');
-                }
                 var periodo = periodoParaNumero(fechaInicioEtapa, n);
                 var lista = ESTADO.porBitacora[n] || [];
                 errores = errores.concat(validarActividadesDeBitacora(lista, n, periodo));
@@ -1484,11 +1500,12 @@
                     if (!ESTADO.competencias[i] || !ESTADO.competencias[i].trim()) continue; // sin competencia -> no se incluye en el documento
                     var act = lista[i] || {};
                     var evidenciaEfectiva = obtenerEvidenciaEfectiva(n, i);
+                    var fechasEfectivas = obtenerFechasActividadEfectivas(act, periodo);
                     actividades.push({
                         descripcion: obtenerDescripcionEfectiva(n, i),
                         competencias: ESTADO.competencias[i] || '',
-                        fecha_inicio: act.fecha_inicio || (periodo ? periodo.desde : ''),
-                        fecha_fin: act.fecha_fin || (periodo ? periodo.hasta : ''),
+                        fecha_inicio: fechasEfectivas.fecha_inicio,
+                        fecha_fin: fechasEfectivas.fecha_fin,
                         evidencia_texto: evidenciaEfectiva.texto,
                         evidencia_imagen: evidenciaEfectiva.imagen,
                         observaciones: act.observaciones || ''
@@ -1498,7 +1515,7 @@
                     numero: n,
                     periodoDesde: periodo ? periodo.desde : '',
                     periodoHasta: periodo ? periodo.hasta : '',
-                    fecha_entrega: (ESTADO.fechasEntrega && ESTADO.fechasEntrega[n]) || '',
+                    fecha_entrega: obtenerFechaEntregaEfectiva(n, periodo),
                     actividades: actividades
                 });
             });
