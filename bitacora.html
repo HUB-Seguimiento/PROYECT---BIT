@@ -403,9 +403,11 @@
                                     Selecciona primero la fecha de inicio de la etapa y el número de bitácora en el "Encabezado" para habilitar esta sección.
                                 </div>
                                 <div id="controlFechaEntregaWrapper" class="form-group mb-3 d-none">
-                                    <label class="bitacora-required">Fecha de entrega de esta bitácora</label>
+                                    <label>Fecha de entrega de esta bitácora</label>
                                     <input type="date" class="form-control" id="fechaEntregaBitacoraActual" style="max-width:220px;">
-                                    <small class="d-block text-muted mt-1">Cada bitácora se entrega en una fecha distinta — escríbela manualmente para la N° <span id="numeroBitacoraFechaEntrega">-</span>.</small>
+                                    <small class="d-block text-muted mt-1 nota-fecha-entrega-auto">
+                                        <i class="fas fa-magic"></i> Se puso automáticamente el último día del período de la Bitácora N° <span id="numeroBitacoraFechaEntrega">-</span>. Puedes cambiarla si entregas en otra fecha; si no la modificas, se usa esta.
+                                    </small>
                                 </div>
                                 <div id="controlObservacionesWrapper" class="form-group mb-3 d-none">
                                     <label class="d-block mb-1 font-weight-bold">¿Hay observaciones para esta bitácora?</label>
@@ -480,7 +482,7 @@
                                     <div class="form-group col-md-6">
                                         <label class="bitacora-required">Firma del aprendiz (imagen)</label>
                                         <div class="custom-file">
-                                            <input type="file" class="custom-file-input firma-input" id="firmaAprendizInput" name="firma_aprendiz" accept="image/*" required>
+                                            <input type="file" class="custom-file-input firma-input" id="firmaAprendizInput" name="firma_aprendiz" accept="image/*">
                                             <label class="custom-file-label" for="firmaAprendizInput">Seleccionar imagen...</label>
                                         </div>
                                         <div class="firma-preview-wrapper mt-2" id="firmaAprendizPreviewWrapper" style="display:none;">
@@ -622,7 +624,7 @@
             <footer class="sticky-footer bg-white no-print">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; Your Website 2021</span>
+                        <span>Copyright &copy; Your Website 2026</span>
                     </div>
                 </div>
             </footer>
@@ -743,6 +745,13 @@
             }
         });
 
+        // Apenas la persona cambia la fecha de entrega (que se puso sola por defecto), se
+        // oculta el aviso de "automática" — ya es una fecha elegida a propósito.
+        document.getElementById('fechaEntregaBitacoraActual').addEventListener('input', function () {
+            var nota = document.querySelector('.nota-fecha-entrega-auto');
+            if (nota) nota.classList.add('d-none');
+        });
+
         document.getElementById('fechaInicioEtapa').addEventListener('change', function () {
             calcularPeriodo();
             renderizarActividadesPorBitacora(numeroActual);
@@ -844,7 +853,8 @@
             ESTADO.porBitacora[numero] = lista;
         }
 
-        // Fecha de entrega: manual y distinta por cada bitácora (NUNCA se copia de otra).
+        // Fecha de entrega: por defecto es el último día del período de cada bitácora (editable),
+        // nunca se copia de otra bitácora — cada una tiene la suya, sea automática o manual.
         function leerFechaEntregaActual(numero) {
             if (!numero) return;
             var input = document.getElementById('fechaEntregaBitacoraActual');
@@ -1017,9 +1027,19 @@
             controlFecha.classList.remove('d-none');
             tituloNumero.textContent = numero;
             numeroFechaEntrega.textContent = numero;
-            // Fecha de entrega: manual y distinta por bitácora — se llena con lo ya guardado
-            // para ESTA bitácora, o vacía si nunca se ha escrito (nunca se copia de otra).
-            inputFechaEntrega.value = (ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero]) || '';
+            // Fecha de entrega: por defecto se pone el último día del período de ESTA bitácora
+            // (editable). Si el usuario ya la había guardado o cambiado, se respeta esa.
+            var notaFechaAuto = document.querySelector('.nota-fecha-entrega-auto');
+            var fechaGuardada = ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero];
+            if (fechaGuardada) {
+                inputFechaEntrega.value = fechaGuardada;
+                if (notaFechaAuto) notaFechaAuto.classList.toggle('d-none', fechaGuardada !== periodoHasta);
+            } else {
+                inputFechaEntrega.value = periodoHasta;
+                if (!ESTADO.fechasEntrega) ESTADO.fechasEntrega = {};
+                ESTADO.fechasEntrega[numero] = periodoHasta; // se guarda ya mismo como valor automático
+                if (notaFechaAuto) notaFechaAuto.classList.remove('d-none');
+            }
 
             var totalCompetencias = contarCompetencias();
             var competenciasTexto = Array.from(document.querySelectorAll('.competencia-texto')).map(function (el) { return el.value; });
@@ -1419,6 +1439,11 @@
             }
 
             var errores = validarCompetencias();
+            if (!ESTADO.firmas || !ESTADO.firmas.firmaAprendiz) {
+                var inputFirma = document.getElementById('firmaAprendizInput');
+                if (inputFirma) inputFirma.classList.add('is-invalid');
+                errores.push('Falta la firma del aprendiz — es obligatoria para generar el documento.');
+            }
             if (seleccionadas.indexOf(parseInt(numeroActual, 10)) !== -1) {
                 errores = errores.concat(validarActividadesVisibles());
             }

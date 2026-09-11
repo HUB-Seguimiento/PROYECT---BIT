@@ -142,8 +142,8 @@
                                 <li><strong>Competencias del programa de formación:</strong> mínimo 3 (pueden repetirse si corresponde). Esto se llena <strong>una sola vez</strong> y aplica igual a las 12 bitácoras, porque las competencias no cambian con el tiempo.</li>
                                 <li><strong>Descripción de actividades, evidencias y observaciones:</strong> a diferencia de las competencias, esto <strong>sí cambia en cada bitácora</strong>. Lo que escribas en la Bitácora 1 se copia automáticamente a las demás como sugerencia editable — si no la cambias, esa es la que queda impresa. La evidencia puede ser texto <em>o</em> imagen (no ambas a la vez en la misma actividad; por defecto se sugiere "Orden de trabajo" como texto, editable). Si no hay observaciones, marca "No" en esa pregunta y se llenan solas con "N/A".</li>
                                 <li><strong>Afiliación ARL:</strong> indica si el aprendiz está afiliado, el nivel de riesgo actual y si cuenta con los elementos de protección.</li>
-                                <li><strong>Firmas:</strong> sube la imagen de la firma del aprendiz (obligatoria); las firmas del instructor y del ente co-formador son opcionales.</li>
-                                <li><strong>Fecha de entrega de la bitácora:</strong> se escribe a mano, bitácora por bitácora (no se copia de ninguna otra, porque cada una se entrega en una fecha distinta).</li>
+                                <li><strong>Firmas:</strong> sube la imagen de la firma del aprendiz (obligatoria); las firmas del instructor y del ente co-formador son opcionales. Se suben una sola vez y aplican automáticamente a las 12 bitácoras — no hace falta volver a subirlas al cambiar de bitácora.</li>
+                                <li><strong>Fecha de entrega de la bitácora:</strong> se pone automáticamente en el último día del período de cada bitácora, pero puedes cambiarla si entregas en otra fecha. Si no la modificas, se usa la automática. Nunca se copia de otra bitácora — cada una tiene la suya.</li>
                                 <li><strong>Vista Previa:</strong> antes de descargar, puedes revisar en la sección "Vista Previa" cómo va a quedar el documento — es de solo lectura.</li>
                                 <li><strong>Descarga:</strong> en "¿Qué bitácoras quieres incluir en la descarga?" elige si quieres las 12, o solo una o varias puntuales. Revisa que no queden campos marcados en rojo y descarga el formato en PDF.</li>
                             </ol>
@@ -198,7 +198,7 @@
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; Your Website 2020</span>
+                        <span>Copyright &copy; Your Website 2026</span>
                     </div>
                 </div>
             </footer>
@@ -228,7 +228,8 @@
                 </div>
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button> 
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <a class="btn btn-primary" href="login.html">Logout</a>
                 </div>
             </div>
         </div>
@@ -243,6 +244,14 @@
 
     <!-- Custom scripts for all pages-->
     <script src="js/sb-admin-2.min.js"></script>
+
+    <!-- Page level plugins -->
+    <script src="vendor/chart.js/Chart.min.js"></script>
+
+    <!-- Page level custom scripts -->
+    <script src="js/demo/chart-area-demo.js"></script>
+    <script src="js/demo/chart-pie-demo.js"></script>
+    <script src="js/demo/chart-bar-demo.js"></script>
 
 </body>
 
