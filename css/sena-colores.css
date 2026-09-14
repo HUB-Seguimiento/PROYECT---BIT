@@ -181,16 +181,19 @@
         height: 100vh;
         overflow-y: auto;
         z-index: 100;
+        transition: width 0.15s ease;
     }
     #content-wrapper {
-        margin-left: 14rem; /* mismo ancho que el sidebar en pantallas grandes */
+        margin-left: 14rem;
+        transition: margin-left 0.15s ease;
     }
-    /* Si el usuario colapsa el sidebar con el botón de flecha, el contenido
-       recupera todo el ancho para no dejar un espacio vacío a la izquierda. */
-    #wrapper.toggled #content-wrapper {
-        margin-left: 0;
-    }
-    #wrapper.toggled .sidebar {
-        margin-left: -14rem;
+    /* Al colapsar con el botón de flecha, el sidebar NO desaparece del todo — se
+       reduce a una franja angosta con solo íconos (6.5rem, el mismo ancho que ya
+       trae la plantilla para ese estado). El contenido debe correrse exactamente
+       ese ancho, ni más ni menos, para no dejar un espacio en blanco ni encimarse.
+       El botón le pone la clase "sidebar-toggled" al <body> (confirmado en el
+       script original sb-admin-2.js), no a #wrapper — por eso el selector es este. */
+    body.sidebar-toggled #content-wrapper {
+        margin-left: 6.5rem;
     }
 }
