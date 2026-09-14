@@ -85,6 +85,21 @@
     border-color: var(--sena-verde-corporativo) !important;
     color: #fff !important;
 }
+/* Botones desplegables (dropdown-toggle) mientras el menú está ABIERTO: Bootstrap les pone
+   su azul por defecto en este estado puntual (clase real ".show", no cubierta arriba). */
+.btn-outline-primary.show,
+.show > .btn-outline-primary.dropdown-toggle {
+    background-color: var(--sena-verde-corporativo) !important;
+    border-color: var(--sena-verde-corporativo) !important;
+    color: #fff !important;
+}
+/* El resplandor de foco (box-shadow) que Bootstrap dibuja también sale azul por defecto */
+.btn-outline-primary:focus,
+.btn-outline-primary.focus,
+.btn-outline-primary:not(:disabled):not(.disabled):active:focus,
+.show > .btn-outline-primary.dropdown-toggle:focus {
+    box-shadow: 0 0 0 0.2rem rgba(57, 169, 0, 0.4) !important;
+}
 
 /* Enlaces de topbar / búsqueda / iconos activos */
 .topbar .nav-item .nav-link:hover,

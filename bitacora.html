@@ -158,11 +158,24 @@
                                     </div>
                                     <div class="form-group col-md-3">
                                         <label class="bitacora-required">Período a reportar - Desde</label>
-                                        <input type="date" class="form-control" name="periodo_desde" id="periodoDesde" readonly required>
+                                        <input type="date" class="form-control" name="periodo_desde" id="periodoDesde" required>
+                                        <small class="text-muted d-block mt-1 nota-periodo-manual d-none">
+                                            <i class="fas fa-pen"></i> Editado a mano para esta bitácora.
+                                        </small>
                                     </div>
                                     <div class="form-group col-md-3">
                                         <label class="bitacora-required">Período a reportar - Hasta</label>
-                                        <input type="date" class="form-control" name="periodo_hasta" id="periodoHasta" readonly required>
+                                        <input type="date" class="form-control" name="periodo_hasta" id="periodoHasta" required>
+                                        <small class="text-muted d-block mt-1 nota-periodo-manual d-none">
+                                            <i class="fas fa-pen"></i> Editado a mano para esta bitácora.
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <small class="text-muted">
+                                            <i class="fas fa-magic"></i> El período se calcula solo, pero puedes editarlo si esta bitácora en particular necesita fechas distintas.
+                                        </small>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -197,7 +210,8 @@
                                     </div>
                                     <div class="form-group col-md-3">
                                         <label class="bitacora-required">Número de identificación</label>
-                                        <input type="text" class="form-control solo-numero" name="aprendiz_num_doc" inputmode="numeric" pattern="[0-9]*" required>
+                                        <input type="text" class="form-control solo-numero" name="aprendiz_num_doc" inputmode="numeric" pattern="[0-9]*" minlength="5" maxlength="10" required>
+                                        <small class="text-muted">Entre 5 y 10 dígitos.</small>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -223,7 +237,8 @@
                                 <div class="row">
                                     <div class="form-group col-md-4">
                                         <label class="bitacora-required">Número de grupo (ficha)</label>
-                                        <input type="text" class="form-control solo-numero" name="aprendiz_ficha" inputmode="numeric" pattern="[0-9]*" required>
+                                        <input type="text" class="form-control solo-numero" name="aprendiz_ficha" inputmode="numeric" pattern="[0-9]*" minlength="6" maxlength="7" required>
+                                        <small class="text-muted">Entre 6 y 7 dígitos.</small>
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label class="bitacora-required">Modalidad de formación</label>
@@ -379,7 +394,7 @@
                             <div class="card-body">
                                 <p class="text-muted small">
                                     Se muestran 3 espacios porque lo ideal son 3 competencias, pero no siempre aplica — con diligenciar
-                                    <strong>al menos 1</strong> puedes continuar (pueden repetirse si corresponde). Estas vienen del programa de formación y
+                                    <strong>al menos 2</strong> puedes continuar (pueden repetirse si corresponde). Estas vienen del programa de formación y
                                     <strong>no cambian</strong> con el tiempo, así que se llenan <strong>una sola vez</strong> para las 12 bitácoras.
                                 </p>
                                 <div id="contenedorCompetencias"></div>
@@ -593,13 +608,14 @@
                                 </div>
                                 <small class="text-muted d-block mt-2 mb-2">Solo se valida y se descarga la información de las bitácoras que dejes marcadas.</small>
                             </div>
-                            <div class="card-body d-flex flex-wrap justify-content-between align-items-center pt-0">
-                                <div>
-                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar bitácora</button>
-                                    <button type="button" class="btn btn-outline-secondary" id="btnLimpiarFormulario">
-                                        <i class="fas fa-broom"></i> Limpiar formulario
-                                    </button>
-                                </div>
+                            <div class="card-body d-flex flex-wrap align-items-center pt-0" style="gap:8px;">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar bitácora</button>
+                                <button type="button" class="btn btn-outline-secondary" id="btnLimpiarFormulario">
+                                    <i class="fas fa-broom"></i> Limpiar formulario
+                                </button>
+                                <a href="vista-previa.html" class="btn btn-outline-secondary">
+                                    <i class="fas fa-eye"></i> Vista Previa
+                                </a>
                                 <button type="button" class="btn btn-outline-primary" id="btnDescargarPDF">
                                     <i class="fas fa-file-pdf"></i> Descargar PDF
                                 </button>
@@ -699,8 +715,9 @@
             var periodoDesdeInput = document.getElementById('periodoDesde');
             var periodoHastaInput = document.getElementById('periodoHasta');
             var resumen = document.getElementById('resumenEtapa');
+            var notasManual = document.querySelectorAll('.nota-periodo-manual');
 
-            var periodo = periodoParaNumero(fechaInicioStr, numero);
+            var periodo = periodoEfectivo(fechaInicioStr, numero);
             if (!periodo) {
                 periodoDesdeInput.value = '';
                 periodoHastaInput.value = '';
@@ -711,6 +728,8 @@
             var inicioEtapa = parseFechaInput(fechaInicioStr);
             periodoDesdeInput.value = periodo.desde;
             periodoHastaInput.value = periodo.hasta;
+            var esManual = !!(ESTADO.periodosManual && ESTADO.periodosManual[numero]);
+            notasManual.forEach(function (n) { n.classList.toggle('d-none', !esManual); });
 
             var finEtapa = finEtapaCalendario(inicioEtapa);
             var totalDias = Math.round((finEtapa - inicioEtapa) / 86400000) + 1;
@@ -721,6 +740,99 @@
                     ' días — la última se ajusta para cerrar exacto en ' + MESES_ETAPA + ' meses de calendario, ' + totalDias + ' días en total).';
             }
         }
+
+        // Si la persona edita a mano el período de la bitácora que está viendo, esa edición
+        // se guarda como excepción SOLO para esa bitácora, y es la que se usa de verdad al
+        // generar el documento — no solo un cambio visual. Además, si el cambio corre la fecha
+        // de cierre (ej. por una incapacidad), se ofrece arrastrar ese mismo desplazamiento a
+        // las bitácoras siguientes, para que no queden encimadas ni con un hueco entre medio.
+        function guardarPeriodoManual() {
+            var numero = parseInt(document.getElementById('bitacoraNumero').value, 10);
+            var desde = document.getElementById('periodoDesde').value;
+            var hasta = document.getElementById('periodoHasta').value;
+            if (!numero || !desde || !hasta) return;
+
+            // Antes de sobreescribir, se guarda cuál era el "hasta" ANTERIOR de esta bitácora,
+            // para saber si la fecha de entrega actual todavía era la automática o si el usuario
+            // ya la había cambiado a propósito por su cuenta.
+            var periodoAnterior = periodoEfectivo(ESTADO.campos.fecha_inicio_etapa, numero);
+            var hastaAnterior = periodoAnterior ? periodoAnterior.hasta : null;
+
+            if (!ESTADO.periodosManual) ESTADO.periodosManual = {};
+            ESTADO.periodosManual[numero] = { desde: desde, hasta: hasta };
+            document.querySelectorAll('.nota-periodo-manual').forEach(function (n) { n.classList.remove('d-none'); });
+
+            // Si la fecha de entrega de esta bitácora todavía era la automática (coincidía con
+            // el "hasta" anterior), se sincroniza con el período nuevo. Si el usuario ya la
+            // había cambiado a mano por su cuenta, se respeta tal cual quedó.
+            if (ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero] === hastaAnterior) {
+                ESTADO.fechasEntrega[numero] = hasta;
+                // Se actualiza también el campo en pantalla ANTES de guardar, para que no lo
+                // vuelva a pisar con el valor viejo que todavía se ve en el formulario.
+                if (String(numero) === String(numeroActual)) {
+                    var inputFechaEntregaSync = document.getElementById('fechaEntregaBitacoraActual');
+                    if (inputFechaEntregaSync) inputFechaEntregaSync.value = hasta;
+                }
+            }
+
+            persistirEstado();
+            if (String(numero) === String(numeroActual)) renderizarActividadesPorBitacora(numeroActual);
+
+            if (numero >= MAX_BITACORAS) return; // no hay bitácoras siguientes que correr
+            var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
+            var original = periodoParaNumero(fechaInicioEtapa, numero);
+            if (!original) return;
+            var offsetDias = Math.round((parseFechaInput(hasta) - parseFechaInput(original.hasta)) / 86400000);
+            if (offsetDias === 0) return; // el cambio no movió la fecha de cierre, nada que arrastrar
+
+            var mensaje = offsetDias > 0
+                ? '¿Quieres correr también las fechas de las bitácoras ' + (numero + 1) + ' a ' + MAX_BITACORAS + ' esos mismos ' + offsetDias + ' día(s)? Útil si esto fue por una incapacidad u otra causa que atrasó el cronograma.'
+                : '¿Quieres adelantar también las fechas de las bitácoras ' + (numero + 1) + ' a ' + MAX_BITACORAS + ' esos mismos ' + Math.abs(offsetDias) + ' día(s)?';
+            pedirConfirmacion(mensaje, function () {
+                arrastrarDesplazamientoABitacorasSiguientes(numero, offsetDias);
+            });
+        }
+
+        // Corre (o adelanta) el período de las bitácoras posteriores a "numero" en "offsetDias"
+        // días, respetando la duración propia de cada una. Nunca toca una bitácora que ya tenga
+        // su propia edición manual independiente — esa se respeta tal cual quedó.
+        function arrastrarDesplazamientoABitacorasSiguientes(numero, offsetDias) {
+            var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
+            for (var m = numero + 1; m <= MAX_BITACORAS; m++) {
+                if (ESTADO.periodosManual[m]) continue; // ya tiene su propia excepción, no se toca
+                var periodoOriginalM = periodoParaNumero(fechaInicioEtapa, m);
+                if (!periodoOriginalM) continue;
+                var desdeDesplazado = parseFechaInput(periodoOriginalM.desde);
+                desdeDesplazado.setUTCDate(desdeDesplazado.getUTCDate() + offsetDias);
+                var hastaDesplazado = parseFechaInput(periodoOriginalM.hasta);
+                hastaDesplazado.setUTCDate(hastaDesplazado.getUTCDate() + offsetDias);
+                var hastaDesplazadoStr = formatFechaInput(hastaDesplazado);
+                ESTADO.periodosManual[m] = { desde: formatFechaInput(desdeDesplazado), hasta: hastaDesplazadoStr };
+
+                // Igual que con la bitácora editada directamente: si la fecha de entrega de esta
+                // bitácora todavía era la automática (coincidía con su "hasta" original), se
+                // corre junto con el período. Si el usuario ya la había cambiado a mano, se respeta.
+                if (ESTADO.fechasEntrega && ESTADO.fechasEntrega[m] === periodoOriginalM.hasta) {
+                    ESTADO.fechasEntrega[m] = hastaDesplazadoStr;
+                }
+            }
+            persistirEstado();
+            calcularPeriodo(); // refresca en pantalla por si se está viendo una de las bitácoras afectadas
+            renderizarActividadesPorBitacora(numeroActual); // refresca también la fecha de entrega visible
+            mostrarAviso('Listo: las bitácoras ' + (numero + 1) + ' a ' + MAX_BITACORAS + ' se ajustaron ' + Math.abs(offsetDias) + ' día(s), incluyendo su fecha de entrega si todavía era la automática. Puedes revisarlas cambiando el número de bitácora.', 'Fechas actualizadas');
+        }
+        // Al escribir la fecha a mano (en vez de usar el calendario), el navegador dispara
+        // "change" por cada parte que se completa (día, mes, año) — no solo al terminar toda
+        // la fecha. Por eso se espera un momento sin más cambios antes de preguntar si se debe
+        // correr el resto de bitácoras, así no interrumpe a mitad de la escritura. Este mismo
+        // margen también cubre el caso de elegir la fecha con el calendario (un único cambio).
+        var esperaPeriodoManual = null;
+        function guardarPeriodoManualConEspera() {
+            clearTimeout(esperaPeriodoManual);
+            esperaPeriodoManual = setTimeout(guardarPeriodoManual, 900);
+        }
+        document.getElementById('periodoDesde').addEventListener('change', guardarPeriodoManualConEspera);
+        document.getElementById('periodoHasta').addEventListener('change', guardarPeriodoManualConEspera);
 
         document.getElementById('bitacoraNumero').addEventListener('change', function () {
             if (numeroActual) {
@@ -754,6 +866,8 @@
 
         document.getElementById('fechaInicioEtapa').addEventListener('change', function () {
             calcularPeriodo();
+            guardarEstado();
+            precalcularFechasDeTodasLasBitacoras();
             renderizarActividadesPorBitacora(numeroActual);
         });
 
@@ -773,6 +887,31 @@
         function persistirEstado() {
             try { sessionStorage.setItem(FORM_STATE_KEY, JSON.stringify(ESTADO)); }
             catch (e) { console.warn('No se pudo guardar el progreso del formulario:', e); }
+        }
+
+        // Calcula y GUARDA de inmediato la fecha de entrega y las fechas de cada actividad
+        // para las 12 bitácoras, apenas se establece o cambia la fecha de inicio de la etapa
+        // — sin esperar a que el usuario abra cada bitácora una por una. Solo completa lo que
+        // esté vacío: nunca sobrescribe una fecha que el usuario ya haya escrito a mano.
+        function precalcularFechasDeTodasLasBitacoras() {
+            var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
+            if (!fechaInicioEtapa) return;
+            var totalCompetencias = contarCompetencias();
+            if (!ESTADO.fechasEntrega) ESTADO.fechasEntrega = {};
+            for (var n = 1; n <= MAX_BITACORAS; n++) {
+                var periodo = periodoEfectivo(fechaInicioEtapa, n);
+                if (!periodo) continue;
+
+                if (!ESTADO.fechasEntrega[n]) ESTADO.fechasEntrega[n] = periodo.hasta;
+
+                if (!ESTADO.porBitacora[n]) ESTADO.porBitacora[n] = [];
+                for (var i = 0; i < totalCompetencias; i++) {
+                    if (!ESTADO.porBitacora[n][i]) ESTADO.porBitacora[n][i] = {};
+                    if (!ESTADO.porBitacora[n][i].fecha_inicio) ESTADO.porBitacora[n][i].fecha_inicio = periodo.desde;
+                    if (!ESTADO.porBitacora[n][i].fecha_fin) ESTADO.porBitacora[n][i].fecha_fin = periodo.hasta;
+                }
+            }
+            persistirEstado();
         }
 
         function limpiarEstadoGuardado() {
@@ -917,6 +1056,7 @@
             // se vacía desaparece, y si solo cambia el texto se actualiza la referencia.
             bloque.querySelector('.competencia-texto').addEventListener('input', function () {
                 guardarEstado();
+                precalcularFechasDeTodasLasBitacoras();
                 renderizarActividadesPorBitacora(numeroActual);
             });
             return bloque;
@@ -1276,8 +1416,8 @@
         // ============================================================
         // Valida las competencias (plantilla, una sola vez): mínimo 3, sin repetir.
         // Lo ideal son las 3 competencias (por eso siempre se muestran 3 espacios), pero no
-        // siempre aplica — con que quede al menos 1 diligenciada es suficiente para continuar.
-        var MIN_COMPETENCIAS_LLENAS = 1;
+        // siempre aplica — con que queden al menos 2 diligenciadas es suficiente para continuar.
+        var MIN_COMPETENCIAS_LLENAS = 2;
 
         function validarCompetencias() {
             var errores = [];
@@ -1288,7 +1428,9 @@
                 if (input.value.trim()) completas++;
                 // Los espacios vacíos ya NO se marcan como error: son opcionales si no aplican.
             });
-            if (completas < MIN_COMPETENCIAS_LLENAS) errores.push('Debe diligenciar al menos ' + MIN_COMPETENCIAS_LLENAS + ' competencia.');
+            if (completas < MIN_COMPETENCIAS_LLENAS) {
+                errores.push('Debe diligenciar al menos ' + MIN_COMPETENCIAS_LLENAS + ' competencias' + (MIN_COMPETENCIAS_LLENAS === 1 ? ' (falta 1)' : '') + '.');
+            }
             return errores;
         }
 
@@ -1470,7 +1612,7 @@
             var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
             seleccionadas.forEach(function (n) {
                 if (String(n) === String(numeroActual)) return; // esa ya se validó arriba, con resaltado visual
-                var periodo = periodoParaNumero(fechaInicioEtapa, n);
+                var periodo = periodoEfectivo(fechaInicioEtapa, n);
                 var lista = ESTADO.porBitacora[n] || [];
                 errores = errores.concat(validarActividadesDeBitacora(lista, n, periodo));
             });
@@ -1493,7 +1635,7 @@
             var numeros = numerosSeleccionados && numerosSeleccionados.length ? numerosSeleccionados : obtenerBitacorasSeleccionadas();
             var bitacoras = [];
             numeros.forEach(function (n) {
-                var periodo = periodoParaNumero(fechaInicioEtapa, n);
+                var periodo = periodoEfectivo(fechaInicioEtapa, n);
                 var lista = ESTADO.porBitacora[n] || [];
                 var actividades = [];
                 for (var i = 0; i < totalCompetencias; i++) {
@@ -1723,6 +1865,7 @@
             });
 
             calcularPeriodo();
+            precalcularFechasDeTodasLasBitacoras();
             numeroActual = document.getElementById('bitacoraNumero').value;
             renderizarActividadesPorBitacora(numeroActual);
             var selectorAbajo = document.getElementById('bitacoraNumeroAbajo');

@@ -75,7 +75,7 @@
         }
 
         var FORM_STATE_KEY = 'bitacoraFormState';
-        var ESTADO = { campos: {}, alternativa: '', competencias: [], porBitacora: {}, fechasEntrega: {}, firmas: {} };
+        var ESTADO = { campos: {}, alternativa: '', competencias: [], porBitacora: {}, fechasEntrega: {}, periodosManual: {}, firmas: {} };
 
         function cargarEstadoDesdeStorage() {
             var raw;
@@ -88,8 +88,18 @@
                 ESTADO.competencias = guardado.competencias || [];
                 ESTADO.porBitacora = guardado.porBitacora || {};
                 ESTADO.fechasEntrega = guardado.fechasEntrega || {};
+                ESTADO.periodosManual = guardado.periodosManual || {};
                 ESTADO.firmas = guardado.firmas || {};
             } catch (e) { /* estado corrupto, se ignora */ }
+        }
+
+        // Devuelve el período "efectivo" de una bitácora: el que la persona haya editado a mano
+        // (si existe), o si no, el calculado automáticamente. El cálculo automático sigue
+        // funcionando igual que siempre — esto solo permite anular el resultado puntualmente.
+        function periodoEfectivo(fechaInicioEtapa, numero) {
+            var manual = ESTADO.periodosManual && ESTADO.periodosManual[numero];
+            if (manual && manual.desde && manual.hasta) return manual;
+            return periodoParaNumero(fechaInicioEtapa, numero);
         }
 
         function escapeHtml(texto) {
