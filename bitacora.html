@@ -1374,13 +1374,26 @@
                     evidenciaTextoInicial = 'ORDEN DE TRABAJO';
                 }
 
+                var fechaInicioResuelta = datos.fecha_inicio || periodoDesde;
+                var fechaFinResuelta = datos.fecha_fin || periodoHasta;
+
+                // Si esta actividad cae dentro de una incapacidad o pausa de contrato registrada,
+                // se usa eso como valor por defecto de "Observaciones" (editable) — en vez de
+                // quedar vacío o de llenarse con "N/A" si el usuario dice que no hay observaciones.
+                // Solo se aplica en la Actividad 1; las demás se comportan como siempre.
+                var observacionesInicial = datos.observaciones;
+                if (!observacionesInicial && i === 0) {
+                    var tipoIncActividad = tipoIncapacidadParaRango(fechaInicioResuelta, fechaFinResuelta, ESTADO.incapacidades);
+                    if (tipoIncActividad) observacionesInicial = tipoIncActividad;
+                }
+
                 var datosConDefaults = {
                     descripcion: datos.descripcion || sugerencia.descripcion || '',
-                    fecha_inicio: datos.fecha_inicio || periodoDesde,
-                    fecha_fin: datos.fecha_fin || periodoHasta,
+                    fecha_inicio: fechaInicioResuelta,
+                    fecha_fin: fechaFinResuelta,
                     evidencia_texto: evidenciaTextoInicial || '',
                     evidencia_imagen: datos.evidencia_imagen || null,
-                    observaciones: datos.observaciones || ''
+                    observaciones: observacionesInicial || ''
                 };
                 html += construirBloqueActividadBitacoraHTML(i, competenciasTexto[i], datosConDefaults, sugerencia);
             }
@@ -1467,8 +1480,14 @@
         var TEXTO_SIN_OBSERVACIONES = 'N/A';
 
         function aplicarNoHayObservaciones() {
-            document.querySelectorAll('#contenedorActividadesPorBitacora .act-observaciones').forEach(function (ta) {
-                ta.value = TEXTO_SIN_OBSERVACIONES;
+            document.querySelectorAll('#contenedorActividadesPorBitacora .actividad-bloque').forEach(function (bloque) {
+                var ta = bloque.querySelector('.act-observaciones');
+                if (!ta) return;
+                var esPrimeraActividad = bloque.getAttribute('data-index') === '0';
+                var tipoInc = esPrimeraActividad
+                    ? tipoIncapacidadParaRango(bloque.querySelector('.act-fecha-inicio').value, bloque.querySelector('.act-fecha-fin').value, ESTADO.incapacidades)
+                    : '';
+                ta.value = tipoInc || TEXTO_SIN_OBSERVACIONES;
                 ta.readOnly = true;
                 ta.classList.add('bg-light');
             });
@@ -1485,10 +1504,19 @@
         // Después de renderizar las actividades de una bitácora, refleja en el interruptor
         // Sí/No lo que ya había guardado (si TODAS las observaciones son "N/A", marca "No").
         function sincronizarControlObservaciones() {
-            var textareas = document.querySelectorAll('#contenedorActividadesPorBitacora .act-observaciones');
-            if (textareas.length === 0) return;
-            var todasNA = Array.from(textareas).every(function (ta) { return ta.value.trim() === TEXTO_SIN_OBSERVACIONES; });
-            if (todasNA) {
+            var bloques = document.querySelectorAll('#contenedorActividadesPorBitacora .actividad-bloque');
+            if (bloques.length === 0) return;
+            var todasCoincidenConElValorAutomatico = Array.from(bloques).every(function (bloque) {
+                var ta = bloque.querySelector('.act-observaciones');
+                if (!ta) return true;
+                var esPrimeraActividad = bloque.getAttribute('data-index') === '0';
+                var tipoInc = esPrimeraActividad
+                    ? tipoIncapacidadParaRango(bloque.querySelector('.act-fecha-inicio').value, bloque.querySelector('.act-fecha-fin').value, ESTADO.incapacidades)
+                    : '';
+                var valorEsperadoSiNoHay = tipoInc || TEXTO_SIN_OBSERVACIONES;
+                return ta.value.trim() === valorEsperadoSiNoHay;
+            });
+            if (todasCoincidenConElValorAutomatico) {
                 document.getElementById('hayObsNo').checked = true;
                 aplicarNoHayObservaciones();
             } else {
@@ -1816,6 +1844,10 @@
                     var act = lista[i] || {};
                     var evidenciaEfectiva = obtenerEvidenciaEfectiva(n, i);
                     var fechasEfectivas = obtenerFechasActividadEfectivas(act, periodo);
+                    var observacionesEfectivas = act.observaciones;
+                    if (!observacionesEfectivas && i === 0) {
+                        observacionesEfectivas = tipoIncapacidadParaRango(fechasEfectivas.fecha_inicio, fechasEfectivas.fecha_fin, ESTADO.incapacidades);
+                    }
                     actividades.push({
                         descripcion: obtenerDescripcionEfectiva(n, i),
                         competencias: ESTADO.competencias[i] || '',
@@ -1823,7 +1855,7 @@
                         fecha_fin: fechasEfectivas.fecha_fin,
                         evidencia_texto: evidenciaEfectiva.texto,
                         evidencia_imagen: evidenciaEfectiva.imagen,
-                        observaciones: act.observaciones || ''
+                        observaciones: observacionesEfectivas || ''
                     });
                 }
                 bitacoras.push({

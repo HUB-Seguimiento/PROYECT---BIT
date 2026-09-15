@@ -108,6 +108,27 @@
             return false;
         }
 
+        // Si el rango [fechaInicioStr, fechaFinStr] de una actividad se cruza con alguna
+        // incapacidad o pausa de contrato registrada, devuelve su(s) tipo(s) — para usarlos como
+        // valor por defecto en "Observaciones" de esa actividad. Si no hay cruce, devuelve ''.
+        function tipoIncapacidadParaRango(fechaInicioStr, fechaFinStr, incapacidades) {
+            if (!fechaInicioStr || !fechaFinStr || !incapacidades || !incapacidades.length) return '';
+            var inicioAct = parseFechaInput(fechaInicioStr);
+            var finAct = parseFechaInput(fechaFinStr);
+            var tiposEncontrados = [];
+            incapacidades.forEach(function (inc) {
+                if (!inc.desde || !inc.hasta) return;
+                var desdeInc = parseFechaInput(inc.desde);
+                var hastaInc = parseFechaInput(inc.hasta);
+                var seCruzan = inicioAct <= hastaInc && finAct >= desdeInc;
+                if (seCruzan) {
+                    var tipo = inc.tipo || 'Incapacidad';
+                    if (tiposEncontrados.indexOf(tipo) === -1) tiposEncontrados.push(tipo);
+                }
+            });
+            return tiposEncontrados.join(' / ');
+        }
+
         // Cuántos días ACTIVOS (productivos) se necesitan en total durante toda la etapa: los
         // mismos que ya se calculaban antes de existir las incapacidades (el tramo de calendario
         // que va del inicio al cierre de los 6 meses). Las incapacidades no achican esta meta,
