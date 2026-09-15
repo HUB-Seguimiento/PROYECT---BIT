@@ -186,6 +186,27 @@
                             </div>
                         </div>
 
+                        <!-- Incapacidades y pausas de contrato -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 font-weight-bold text-primary">Incapacidades y pausas de contrato (opcional)</h6>
+                                <button type="button" class="btn btn-sm btn-outline-primary no-print" id="btnAddIncapacidad">
+                                    <i class="fas fa-plus"></i> Agregar
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small">
+                                    Si el aprendiz tuvo una o más incapacidades, o una pausa del contrato de aprendizaje, durante la etapa productiva,
+                                    regístralas aquí con su fecha de inicio y fin. Las 12 bitácoras se recalculan automáticamente saltándose esos días —
+                                    cada una sigue completando 15 días <strong>activos</strong> (o el total de días activos que corresponda para la
+                                    última), y toda la etapa se corre en calendario lo que hayan durado. <strong>Si no registras ninguna, todo funciona
+                                        exactamente igual que antes</strong> (períodos fijos de 15 días de calendario).
+                                </p>
+                                <div id="contenedorIncapacidades"></div>
+                                <div id="alertaSinIncapacidades" class="text-muted small font-italic">No hay incapacidades ni pausas de contrato registradas.</div>
+                            </div>
+                        </div>
+
                         <!-- Datos del aprendiz -->
                         <div class="card shadow mb-4">
                             <div class="card-header py-3">
@@ -733,11 +754,21 @@
 
             var finEtapa = finEtapaCalendario(inicioEtapa);
             var totalDias = Math.round((finEtapa - inicioEtapa) / 86400000) + 1;
+            var ultimaBitacora = periodoConIncapacidades(fechaInicioStr, MAX_BITACORAS, ESTADO.incapacidades);
+            var finEtapaReal = ultimaBitacora ? parseFechaInput(ultimaBitacora.hasta) : finEtapa;
+            var diasExtendidos = Math.round((finEtapaReal - finEtapa) / 86400000);
 
             if (resumen) {
-                resumen.textContent = 'Etapa productiva: ' + formatFechaVisible(inicioEtapa) + ' al ' +
-                    formatFechaVisible(finEtapa) + ' (' + MAX_BITACORAS + ' bitácoras, la mayoría de ' + DIAS_POR_BITACORA +
-                    ' días — la última se ajusta para cerrar exacto en ' + MESES_ETAPA + ' meses de calendario, ' + totalDias + ' días en total).';
+                if (diasExtendidos > 0) {
+                    resumen.textContent = 'Etapa productiva: ' + formatFechaVisible(inicioEtapa) + ' al ' +
+                        formatFechaVisible(finEtapaReal) + ' (' + MAX_BITACORAS + ' bitácoras, la mayoría de ' + DIAS_POR_BITACORA +
+                        ' días activos — el cierre se corrió ' + diasExtendidos + ' día(s) por las incapacidades registradas; sin ellas habría cerrado el ' +
+                        formatFechaVisible(finEtapa) + ').';
+                } else {
+                    resumen.textContent = 'Etapa productiva: ' + formatFechaVisible(inicioEtapa) + ' al ' +
+                        formatFechaVisible(finEtapa) + ' (' + MAX_BITACORAS + ' bitácoras, la mayoría de ' + DIAS_POR_BITACORA +
+                        ' días — la última se ajusta para cerrar exacto en ' + MESES_ETAPA + ' meses de calendario, ' + totalDias + ' días en total).';
+                }
             }
         }
 
@@ -752,35 +783,17 @@
             var hasta = document.getElementById('periodoHasta').value;
             if (!numero || !desde || !hasta) return;
 
-            // Antes de sobreescribir, se guarda cuál era el "hasta" ANTERIOR de esta bitácora,
-            // para saber si la fecha de entrega actual todavía era la automática o si el usuario
-            // ya la había cambiado a propósito por su cuenta.
-            var periodoAnterior = periodoEfectivo(ESTADO.campos.fecha_inicio_etapa, numero);
-            var hastaAnterior = periodoAnterior ? periodoAnterior.hasta : null;
-
+            // Se guarda como excepción manual SOLO para esta bitácora.
             if (!ESTADO.periodosManual) ESTADO.periodosManual = {};
             ESTADO.periodosManual[numero] = { desde: desde, hasta: hasta };
             document.querySelectorAll('.nota-periodo-manual').forEach(function (n) { n.classList.remove('d-none'); });
-
-            // Si la fecha de entrega de esta bitácora todavía era la automática (coincidía con
-            // el "hasta" anterior), se sincroniza con el período nuevo. Si el usuario ya la
-            // había cambiado a mano por su cuenta, se respeta tal cual quedó.
-            if (ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero] === hastaAnterior) {
-                ESTADO.fechasEntrega[numero] = hasta;
-                // Se actualiza también el campo en pantalla ANTES de guardar, para que no lo
-                // vuelva a pisar con el valor viejo que todavía se ve en el formulario.
-                if (String(numero) === String(numeroActual)) {
-                    var inputFechaEntregaSync = document.getElementById('fechaEntregaBitacoraActual');
-                    if (inputFechaEntregaSync) inputFechaEntregaSync.value = hasta;
-                }
-            }
 
             persistirEstado();
             if (String(numero) === String(numeroActual)) renderizarActividadesPorBitacora(numeroActual);
 
             if (numero >= MAX_BITACORAS) return; // no hay bitácoras siguientes que correr
             var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
-            var original = periodoParaNumero(fechaInicioEtapa, numero);
+            var original = periodoConIncapacidades(fechaInicioEtapa, numero, ESTADO.incapacidades);
             if (!original) return;
             var offsetDias = Math.round((parseFechaInput(hasta) - parseFechaInput(original.hasta)) / 86400000);
             if (offsetDias === 0) return; // el cambio no movió la fecha de cierre, nada que arrastrar
@@ -800,21 +813,13 @@
             var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
             for (var m = numero + 1; m <= MAX_BITACORAS; m++) {
                 if (ESTADO.periodosManual[m]) continue; // ya tiene su propia excepción, no se toca
-                var periodoOriginalM = periodoParaNumero(fechaInicioEtapa, m);
+                var periodoOriginalM = periodoConIncapacidades(fechaInicioEtapa, m, ESTADO.incapacidades);
                 if (!periodoOriginalM) continue;
                 var desdeDesplazado = parseFechaInput(periodoOriginalM.desde);
                 desdeDesplazado.setUTCDate(desdeDesplazado.getUTCDate() + offsetDias);
                 var hastaDesplazado = parseFechaInput(periodoOriginalM.hasta);
                 hastaDesplazado.setUTCDate(hastaDesplazado.getUTCDate() + offsetDias);
-                var hastaDesplazadoStr = formatFechaInput(hastaDesplazado);
-                ESTADO.periodosManual[m] = { desde: formatFechaInput(desdeDesplazado), hasta: hastaDesplazadoStr };
-
-                // Igual que con la bitácora editada directamente: si la fecha de entrega de esta
-                // bitácora todavía era la automática (coincidía con su "hasta" original), se
-                // corre junto con el período. Si el usuario ya la había cambiado a mano, se respeta.
-                if (ESTADO.fechasEntrega && ESTADO.fechasEntrega[m] === periodoOriginalM.hasta) {
-                    ESTADO.fechasEntrega[m] = hastaDesplazadoStr;
-                }
+                ESTADO.periodosManual[m] = { desde: formatFechaInput(desdeDesplazado), hasta: formatFechaInput(hastaDesplazado) };
             }
             persistirEstado();
             calcularPeriodo(); // refresca en pantalla por si se está viendo una de las bitácoras afectadas
@@ -857,9 +862,12 @@
             }
         });
 
-        // Apenas la persona cambia la fecha de entrega (que se puso sola por defecto), se
-        // oculta el aviso de "automática" — ya es una fecha elegida a propósito.
+        // Apenas la persona cambia la fecha de entrega (que se puso sola por defecto), se marca
+        // explícitamente como "editada a mano" para ESTA bitácora — esa marca es la que decide
+        // de ahora en adelante si se respeta o se sigue recalculando sola.
         document.getElementById('fechaEntregaBitacoraActual').addEventListener('input', function () {
+            if (!ESTADO.fechaEntregaManual) ESTADO.fechaEntregaManual = {};
+            ESTADO.fechaEntregaManual[numeroActual] = true;
             var nota = document.querySelector('.nota-fecha-entrega-auto');
             if (nota) nota.classList.add('d-none');
         });
@@ -902,7 +910,12 @@
                 var periodo = periodoEfectivo(fechaInicioEtapa, n);
                 if (!periodo) continue;
 
-                if (!ESTADO.fechasEntrega[n]) ESTADO.fechasEntrega[n] = periodo.hasta;
+                // La fecha de entrega automática ya no hace falta "congelarla" aquí — se calcula
+                // fresca cada vez que se necesita (ver fechaEntregaEfectiva), a menos que el
+                // usuario la haya marcado como editada a mano para esta bitácora en particular.
+                if (!(ESTADO.fechaEntregaManual && ESTADO.fechaEntregaManual[n])) {
+                    ESTADO.fechasEntrega[n] = periodo.hasta;
+                }
 
                 if (!ESTADO.porBitacora[n]) ESTADO.porBitacora[n] = [];
                 for (var i = 0; i < totalCompetencias; i++) {
@@ -912,6 +925,162 @@
                 }
             }
             persistirEstado();
+        }
+
+        // ============================================================
+        //  Incapacidades: registro opcional que hace que las 12 bitácoras
+        //  se recalculen saltándose esos días (ver periodoConIncapacidades
+        //  en bitacora-plantilla.js para el motor de cálculo).
+        // ============================================================
+        function construirBloqueIncapacidadHTML(indice, valor) {
+            valor = valor || {};
+            var tipo = valor.tipo || 'Incapacidad';
+            return '' +
+                '<div class="incapacidad-bloque border rounded p-2 mb-2 d-flex align-items-end flex-wrap" data-index="' + indice + '" style="gap:10px;">' +
+                '  <div>' +
+                '    <label class="mb-1 small">Tipo</label>' +
+                '    <select class="form-control incapacidad-tipo">' +
+                '      <option value="Incapacidad"' + (tipo === 'Incapacidad' ? ' selected' : '') + '>Incapacidad</option>' +
+                '      <option value="Pausa de contrato"' + (tipo === 'Pausa de contrato' ? ' selected' : '') + '>Pausa de contrato</option>' +
+                '    </select>' +
+                '  </div>' +
+                '  <div>' +
+                '    <label class="mb-1 small">Desde</label>' +
+                '    <input type="date" class="form-control incapacidad-desde" value="' + (valor.desde || '') + '">' +
+                '  </div>' +
+                '  <div>' +
+                '    <label class="mb-1 small">Hasta</label>' +
+                '    <input type="date" class="form-control incapacidad-hasta" value="' + (valor.hasta || '') + '">' +
+                '  </div>' +
+                '  <button type="button" class="btn btn-sm btn-outline-danger no-print btn-quitar-incapacidad"><i class="fas fa-trash"></i> Quitar</button>' +
+                '</div>';
+        }
+
+        function actualizarVisibilidadAlertaIncapacidades() {
+            var hay = document.querySelectorAll('#contenedorIncapacidades .incapacidad-bloque').length > 0;
+            document.getElementById('alertaSinIncapacidades').classList.toggle('d-none', hay);
+        }
+
+        function agregarBloqueIncapacidad(valor) {
+            var contenedor = document.getElementById('contenedorIncapacidades');
+            var indice = contenedor.querySelectorAll('.incapacidad-bloque').length;
+            var div = document.createElement('div');
+            div.innerHTML = construirBloqueIncapacidadHTML(indice, valor);
+            var bloque = div.firstElementChild;
+            contenedor.appendChild(bloque);
+            actualizarVisibilidadAlertaIncapacidades();
+
+            bloque.querySelector('.btn-quitar-incapacidad').addEventListener('click', function () {
+                bloque.remove();
+                actualizarVisibilidadAlertaIncapacidades();
+                aplicarCambioDeIncapacidades();
+            });
+            bloque.querySelector('.incapacidad-tipo').addEventListener('change', aplicarCambioDeIncapacidadesConEspera);
+            bloque.querySelector('.incapacidad-desde').addEventListener('change', aplicarCambioDeIncapacidadesConEspera);
+            bloque.querySelector('.incapacidad-hasta').addEventListener('change', aplicarCambioDeIncapacidadesConEspera);
+            return bloque;
+        }
+
+        document.getElementById('btnAddIncapacidad').addEventListener('click', function () { agregarBloqueIncapacidad(); });
+
+        // Lee del DOM la lista de incapacidades/pausas y la guarda en ESTADO (solo las que tengan
+        // ambas fechas completas; una fila a medio llenar no cuenta todavía). El "tipo" es solo
+        // informativo — para el cálculo de fechas, una incapacidad y una pausa de contrato se
+        // tratan exactamente igual (ambas son días que no cuentan como tiempo activo).
+        function leerIncapacidades() {
+            var bloques = document.querySelectorAll('#contenedorIncapacidades .incapacidad-bloque');
+            var lista = [];
+            bloques.forEach(function (bloque) {
+                var tipo = bloque.querySelector('.incapacidad-tipo').value;
+                var desde = bloque.querySelector('.incapacidad-desde').value;
+                var hasta = bloque.querySelector('.incapacidad-hasta').value;
+                if (desde && hasta) lista.push({ tipo: tipo, desde: desde, hasta: hasta });
+            });
+            ESTADO.incapacidades = lista;
+            return lista;
+        }
+
+        // Valida que cada incapacidad tenga "hasta" >= "desde" y que ninguna se traslape con otra
+        // (sin importar si son del mismo tipo o no — dos ausencias no pueden ocurrir al mismo tiempo).
+        function validarIncapacidades() {
+            var errores = [];
+            var bloques = Array.from(document.querySelectorAll('#contenedorIncapacidades .incapacidad-bloque'));
+            var rangos = [];
+            bloques.forEach(function (bloque, idx) {
+                var inputDesde = bloque.querySelector('.incapacidad-desde');
+                var inputHasta = bloque.querySelector('.incapacidad-hasta');
+                var desde = inputDesde.value, hasta = inputHasta.value;
+                if (!desde || !hasta) {
+                    errores.push('Registro ' + (idx + 1) + ': faltan fechas.');
+                    inputDesde.classList.toggle('is-invalid', !desde);
+                    inputHasta.classList.toggle('is-invalid', !hasta);
+                    return;
+                }
+                if (hasta < desde) {
+                    inputHasta.classList.add('is-invalid');
+                    errores.push('Registro ' + (idx + 1) + ': la fecha "hasta" no puede ser anterior a "desde".');
+                    return;
+                }
+                rangos.forEach(function (r) {
+                    if (desde <= r.hasta && hasta >= r.desde) {
+                        errores.push('Registro ' + (idx + 1) + ' se traslapa con el registro ' + (r.idx + 1) + '.');
+                    }
+                });
+                rangos.push({ desde: desde, hasta: hasta, idx: idx });
+            });
+            return errores;
+        }
+
+        // Cuando se agrega, quita o edita una incapacidad, se recalculan las 12 bitácoras. Las
+        // fechas que la persona YA había cambiado a mano (fecha de entrega o fechas de actividad
+        // editadas manualmente, o un período con excepción manual) se respetan tal cual — solo
+        // se actualiza lo que todavía era el resultado automático de antes del cambio.
+        function aplicarCambioDeIncapacidades() {
+            document.querySelectorAll('#contenedorIncapacidades .is-invalid').forEach(function (el) { el.classList.remove('is-invalid'); });
+            var errores = validarIncapacidades();
+            if (errores.length > 0) {
+                mostrarAviso(errores.join(' '), 'Revisa las incapacidades');
+                return;
+            }
+
+            var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
+            if (!fechaInicioEtapa) { leerIncapacidades(); guardarEstado(); return; }
+
+            // 1) Períodos automáticos ANTES del cambio (con la lista vieja de incapacidades).
+            var periodosAntes = [];
+            for (var n = 1; n <= MAX_BITACORAS; n++) periodosAntes[n] = periodoConIncapacidades(fechaInicioEtapa, n, ESTADO.incapacidades);
+
+            // 2) Se guarda la nueva lista de incapacidades.
+            leerIncapacidades();
+
+            // 3) Períodos automáticos DESPUÉS del cambio (con la lista nueva).
+            var totalCompetencias = contarCompetencias();
+            for (var n2 = 1; n2 <= MAX_BITACORAS; n2++) {
+                if (ESTADO.periodosManual && ESTADO.periodosManual[n2]) continue; // tiene su propia excepción manual, no se toca
+                var antes = periodosAntes[n2];
+                var despues = periodoConIncapacidades(fechaInicioEtapa, n2, ESTADO.incapacidades);
+                if (!antes || !despues) continue;
+
+                if (ESTADO.porBitacora[n2]) {
+                    for (var i = 0; i < totalCompetencias; i++) {
+                        var act = ESTADO.porBitacora[n2][i];
+                        if (!act) continue;
+                        if (act.fecha_inicio === antes.desde) act.fecha_inicio = despues.desde;
+                        if (act.fecha_fin === antes.hasta) act.fecha_fin = despues.hasta;
+                    }
+                }
+            }
+
+            precalcularFechasDeTodasLasBitacoras(); // completa lo que siga vacío con el nuevo cálculo
+            calcularPeriodo();
+            renderizarActividadesPorBitacora(numeroActual);
+            guardarEstado();
+        }
+
+        var esperaCambioIncapacidades = null;
+        function aplicarCambioDeIncapacidadesConEspera() {
+            clearTimeout(esperaCambioIncapacidades);
+            esperaCambioIncapacidades = setTimeout(aplicarCambioDeIncapacidades, 900);
         }
 
         function limpiarEstadoGuardado() {
@@ -927,11 +1096,14 @@
             $('#avisoModal').modal('show');
         }
 
-        function pedirConfirmacion(mensaje, alConfirmar) {
+        function pedirConfirmacion(mensaje, alConfirmar, opciones) {
+            opciones = opciones || {};
             document.getElementById('confirmarModalCuerpo').textContent = mensaje;
             var boton = document.getElementById('confirmarModalBotonAceptar');
             var nuevoBoton = boton.cloneNode(true); // limpia listeners anteriores
             boton.parentNode.replaceChild(nuevoBoton, boton);
+            nuevoBoton.textContent = opciones.textoBoton || 'Sí, continuar';
+            nuevoBoton.className = 'btn ' + (opciones.claseBoton || 'btn-danger');
             nuevoBoton.addEventListener('click', function () {
                 $('#confirmarModal').modal('hide');
                 alConfirmar();
@@ -1167,17 +1339,18 @@
             controlFecha.classList.remove('d-none');
             tituloNumero.textContent = numero;
             numeroFechaEntrega.textContent = numero;
-            // Fecha de entrega: por defecto se pone el último día del período de ESTA bitácora
-            // (editable). Si el usuario ya la había guardado o cambiado, se respeta esa.
+            // Fecha de entrega: por defecto es el último día del período de ESTA bitácora, y se
+            // recalcula fresca cada vez que se muestra (así nunca queda "vieja" si el período
+            // cambió). Solo se respeta un valor distinto si el usuario la editó a mano de verdad.
             var notaFechaAuto = document.querySelector('.nota-fecha-entrega-auto');
-            var fechaGuardada = ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero];
-            if (fechaGuardada) {
-                inputFechaEntrega.value = fechaGuardada;
-                if (notaFechaAuto) notaFechaAuto.classList.toggle('d-none', fechaGuardada !== periodoHasta);
+            var esFechaEntregaManual = ESTADO.fechaEntregaManual && ESTADO.fechaEntregaManual[numero];
+            if (esFechaEntregaManual) {
+                inputFechaEntrega.value = (ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero]) || periodoHasta;
+                if (notaFechaAuto) notaFechaAuto.classList.add('d-none');
             } else {
                 inputFechaEntrega.value = periodoHasta;
                 if (!ESTADO.fechasEntrega) ESTADO.fechasEntrega = {};
-                ESTADO.fechasEntrega[numero] = periodoHasta; // se guarda ya mismo como valor automático
+                ESTADO.fechasEntrega[numero] = periodoHasta;
                 if (notaFechaAuto) notaFechaAuto.classList.remove('d-none');
             }
 
@@ -1460,10 +1633,10 @@
         // Fecha de entrega "efectiva": la que el usuario haya guardado, o si nunca visitó esa
         // bitácora, la automática (último día del período) — el cálculo es el mismo sin importar
         // si la persona llegó a ver esa bitácora en pantalla o no.
-        function obtenerFechaEntregaEfectiva(numero, periodo) {
-            var guardada = ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero];
-            if (guardada) return guardada;
-            return periodo ? periodo.hasta : '';
+        // Envuelve la versión robusta compartida (en bitacora-plantilla.js), que usa la marca
+        // explícita ESTADO.fechaEntregaManual en vez de comparar contra un valor "anterior".
+        function obtenerFechaEntregaEfectiva(numero) {
+            return fechaEntregaEfectiva(ESTADO.campos.fecha_inicio_etapa, numero);
         }
 
         // Fechas de una actividad "efectivas": si el usuario nunca visitó esa bitácora, se
@@ -1657,7 +1830,7 @@
                     numero: n,
                     periodoDesde: periodo ? periodo.desde : '',
                     periodoHasta: periodo ? periodo.hasta : '',
-                    fecha_entrega: obtenerFechaEntregaEfectiva(n, periodo),
+                    fecha_entrega: obtenerFechaEntregaEfectiva(n),
                     actividades: actividades
                 });
             });
@@ -1853,6 +2026,9 @@
 
             renderizarCompetenciasIniciales(ESTADO.competencias);
 
+            (ESTADO.incapacidades || []).forEach(function (inc) { agregarBloqueIncapacidad(inc); });
+            actualizarVisibilidadAlertaIncapacidades();
+
             Object.keys(ESTADO.firmas || {}).forEach(function (prefijo) {
                 var base64 = ESTADO.firmas[prefijo];
                 if (!base64) return;
@@ -1872,7 +2048,32 @@
             if (selectorAbajo) selectorAbajo.value = numeroActual;
         }
 
+        // Apenas se abre la página, se pregunta una sola vez por sesión si hay que registrar
+        // incapacidades o pausas de contrato — así se atiende antes de empezar a diligenciar,
+        // sin tener que acordarse de ir a buscar esa sección por su cuenta. No se pregunta si
+        // ya hay alguna registrada, ni más de una vez por sesión (aunque se navegue a otra
+        // página y se vuelva a "Bitacora").
+        function preguntarPorIncapacidadesAlAbrir() {
+            var yaPreguntado;
+            try { yaPreguntado = sessionStorage.getItem('bitacoraYaPreguntoIncapacidades'); } catch (e) { yaPreguntado = null; }
+            if (yaPreguntado) return;
+            try { sessionStorage.setItem('bitacoraYaPreguntoIncapacidades', '1'); } catch (e) { /* noop */ }
+            if (ESTADO.incapacidades && ESTADO.incapacidades.length > 0) return; // ya hay registradas, no hace falta
+
+            pedirConfirmacion(
+                '¿El aprendiz tuvo alguna incapacidad o una pausa del contrato de aprendizaje durante la etapa productiva? ' +
+                'Si es así, regístrala con su fecha de inicio y fin, y el sistema ajustará automáticamente las fechas de las 12 bitácoras.',
+                function () {
+                    var seccion = document.getElementById('contenedorIncapacidades').closest('.card');
+                    if (seccion) seccion.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    agregarBloqueIncapacidad();
+                },
+                { textoBoton: 'Sí, quiero registrar una', claseBoton: 'btn-primary' }
+            );
+        }
+
         restaurarEstado();
+        preguntarPorIncapacidadesAlAbrir();
     </script>
 
 </body>

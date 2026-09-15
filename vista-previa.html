@@ -208,7 +208,7 @@
 
             var numero = parseInt(document.getElementById('selectorBitacoraPreview').value, 10);
             var fechaInicioEtapa = ESTADO.campos.fecha_inicio_etapa;
-            var periodo = periodoParaNumero(fechaInicioEtapa, numero);
+            var periodo = periodoEfectivo(fechaInicioEtapa, numero);
 
             var totalCompetencias = (ESTADO.competencias || []).length;
             var lista = (ESTADO.porBitacora || {})[numero] || [];
@@ -244,7 +244,7 @@
                 numero: numero,
                 periodoDesde: periodo ? periodo.desde : '(define la fecha de inicio de la etapa en "Bitacora")',
                 periodoHasta: periodo ? periodo.hasta : '',
-                fecha_entrega: (ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero]) || '',
+                fecha_entrega: fechaEntregaEfectiva(fechaInicioEtapa, numero),
                 actividades: actividades
             };
 

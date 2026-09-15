@@ -75,7 +75,7 @@
         }
 
         var FORM_STATE_KEY = 'bitacoraFormState';
-        var ESTADO = { campos: {}, alternativa: '', competencias: [], porBitacora: {}, fechasEntrega: {}, periodosManual: {}, firmas: {} };
+        var ESTADO = { campos: {}, alternativa: '', competencias: [], porBitacora: {}, fechasEntrega: {}, fechaEntregaManual: {}, periodosManual: {}, incapacidades: [], firmas: {} };
 
         function cargarEstadoDesdeStorage() {
             var raw;
@@ -89,17 +89,102 @@
                 ESTADO.porBitacora = guardado.porBitacora || {};
                 ESTADO.fechasEntrega = guardado.fechasEntrega || {};
                 ESTADO.periodosManual = guardado.periodosManual || {};
+                ESTADO.fechaEntregaManual = guardado.fechaEntregaManual || {};
+                ESTADO.incapacidades = guardado.incapacidades || [];
                 ESTADO.firmas = guardado.firmas || {};
             } catch (e) { /* estado corrupto, se ignora */ }
         }
 
+        // ¿Cae "fecha" dentro de alguna de las incapacidades registradas? (ambos extremos incluidos)
+        function esDiaDeIncapacidad(fecha, incapacidades) {
+            if (!incapacidades || !incapacidades.length) return false;
+            for (var i = 0; i < incapacidades.length; i++) {
+                var inc = incapacidades[i];
+                if (!inc.desde || !inc.hasta) continue;
+                var desde = parseFechaInput(inc.desde);
+                var hasta = parseFechaInput(inc.hasta);
+                if (fecha >= desde && fecha <= hasta) return true;
+            }
+            return false;
+        }
+
+        // Cuántos días ACTIVOS (productivos) se necesitan en total durante toda la etapa: los
+        // mismos que ya se calculaban antes de existir las incapacidades (el tramo de calendario
+        // que va del inicio al cierre de los 6 meses). Las incapacidades no achican esta meta,
+        // solo hacen que tome más días de calendario alcanzarla.
+        function totalDiasActivosNecesarios(fechaInicioEtapaStr) {
+            var inicio = parseFechaInput(fechaInicioEtapaStr);
+            var fin = finEtapaCalendario(inicio);
+            return Math.round((fin - inicio) / 86400000) + 1;
+        }
+
+        // Calcula las 12 bitácoras de una sola vez, saltándose los días de incapacidad: cada
+        // bitácora (menos la última) necesita 15 días ACTIVOS (no de incapacidad); la última
+        // absorbe los días activos que falten para completar el total de la etapa. Si no hay
+        // ninguna incapacidad registrada, el resultado es idéntico al cálculo de siempre.
+        function calcularTodosLosPeriodosConIncapacidades(fechaInicioEtapaStr, incapacidades) {
+            incapacidades = incapacidades || [];
+            var totalActivosNecesarios = totalDiasActivosNecesarios(fechaInicioEtapaStr);
+            var resultados = [];
+            var cursor = parseFechaInput(fechaInicioEtapaStr);
+            var activosAcumulados = 0;
+
+            for (var n = 1; n <= MAX_BITACORAS; n++) {
+                var metaActivos = (n < MAX_BITACORAS) ? DIAS_POR_BITACORA : Math.max(1, totalActivosNecesarios - activosAcumulados);
+
+                // Si el día donde íbamos a empezar cae en plena incapacidad, se corre al
+                // siguiente día activo disponible.
+                var desdeBitacora = new Date(cursor);
+                while (esDiaDeIncapacidad(desdeBitacora, incapacidades)) {
+                    desdeBitacora.setUTCDate(desdeBitacora.getUTCDate() + 1);
+                }
+
+                var hastaBitacora = new Date(desdeBitacora);
+                var activosEnEsta = 0;
+                while (activosEnEsta < metaActivos) {
+                    if (!esDiaDeIncapacidad(hastaBitacora, incapacidades)) {
+                        activosEnEsta++;
+                        if (activosEnEsta >= metaActivos) break;
+                    }
+                    hastaBitacora.setUTCDate(hastaBitacora.getUTCDate() + 1);
+                }
+
+                resultados.push({ desde: formatFechaInput(desdeBitacora), hasta: formatFechaInput(hastaBitacora) });
+                activosAcumulados += metaActivos;
+                cursor = new Date(hastaBitacora);
+                cursor.setUTCDate(cursor.getUTCDate() + 1);
+            }
+            return resultados;
+        }
+
+        // Atajo para obtener solo el período de UNA bitácora (recalcula las 12 internamente;
+        // es una operación barata, así que no hace falta optimizarlo más).
+        function periodoConIncapacidades(fechaInicioEtapaStr, numero, incapacidades) {
+            if (!fechaInicioEtapaStr || !numero) return null;
+            var todos = calcularTodosLosPeriodosConIncapacidades(fechaInicioEtapaStr, incapacidades);
+            return todos[numero - 1] || null;
+        }
+
         // Devuelve el período "efectivo" de una bitácora: el que la persona haya editado a mano
-        // (si existe), o si no, el calculado automáticamente. El cálculo automático sigue
-        // funcionando igual que siempre — esto solo permite anular el resultado puntualmente.
+        // (si existe); si no, el calculado automáticamente teniendo en cuenta las incapacidades
+        // registradas (si no hay ninguna, da exactamente lo mismo que el cálculo de siempre).
         function periodoEfectivo(fechaInicioEtapa, numero) {
             var manual = ESTADO.periodosManual && ESTADO.periodosManual[numero];
             if (manual && manual.desde && manual.hasta) return manual;
-            return periodoParaNumero(fechaInicioEtapa, numero);
+            return periodoConIncapacidades(fechaInicioEtapa, numero, ESTADO.incapacidades);
+        }
+
+        // Fecha de entrega "efectiva" de una bitácora: si el usuario la editó a mano de verdad
+        // (marca explícita en ESTADO.fechaEntregaManual), se respeta esa. Si no, SIEMPRE se
+        // recalcula fresca como el último día del período efectivo — sin importar qué haya
+        // quedado guardado antes en ESTADO.fechasEntrega por cálculos automáticos previos. Así
+        // se evita el problema de sincronización cuando cambia el período (edición manual,
+        // arrastre por incapacidad, o registro de una incapacidad/pausa de contrato).
+        function fechaEntregaEfectiva(fechaInicioEtapa, numero) {
+            var esManual = ESTADO.fechaEntregaManual && ESTADO.fechaEntregaManual[numero];
+            if (esManual) return (ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero]) || '';
+            var periodo = periodoEfectivo(fechaInicioEtapa, numero);
+            return periodo ? periodo.hasta : '';
         }
 
         function escapeHtml(texto) {
@@ -349,7 +434,7 @@
                 tablaGrid(
                     '<tr>' +
                     celdaLibre(bloqueFirma(datos.firmas.firmaAprendiz), 4, 1, 'height:50px;border:0;vertical-align:bottom;') +
-                    celdaLibre(escapeHtml(bit.fecha_entrega || ''), 4, 1, 'border:0;vertical-align:bottom;') +
+                    celdaLibre(escapeHtml(formatearFechaDDMMYYYY(bit.fecha_entrega)), 4, 1, 'border:0;vertical-align:bottom;') +
                     '</tr>' +
                     '<tr>' +
                     celdaLibre('<div style="border-top:1px solid #000;margin:0 10px;padding-top:2px;">Firma de la persona con rol de aprendiz</div>', 4, 1, 'border:0;font-size:7.5px;padding:0 2px;') +
