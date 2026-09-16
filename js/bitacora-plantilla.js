@@ -75,7 +75,7 @@
         }
 
         var FORM_STATE_KEY = 'bitacoraFormState';
-        var ESTADO = { campos: {}, alternativa: '', competencias: [], porBitacora: {}, fechasEntrega: {}, fechaEntregaManual: {}, periodosManual: {}, incapacidades: [], firmas: {} };
+        var ESTADO = { campos: {}, alternativa: '', competencias: [], porBitacora: {}, fechasEntrega: {}, fechaEntregaManual: {}, fechaActividadManual: {}, periodosManual: {}, incapacidades: [], firmas: {} };
 
         function cargarEstadoDesdeStorage() {
             var raw;
@@ -90,6 +90,7 @@
                 ESTADO.fechasEntrega = guardado.fechasEntrega || {};
                 ESTADO.periodosManual = guardado.periodosManual || {};
                 ESTADO.fechaEntregaManual = guardado.fechaEntregaManual || {};
+                ESTADO.fechaActividadManual = guardado.fechaActividadManual || {};
                 ESTADO.incapacidades = guardado.incapacidades || [];
                 ESTADO.firmas = guardado.firmas || {};
             } catch (e) { /* estado corrupto, se ignora */ }
@@ -206,6 +207,26 @@
             if (esManual) return (ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero]) || '';
             var periodo = periodoEfectivo(fechaInicioEtapa, numero);
             return periodo ? periodo.hasta : '';
+        }
+
+        // Fechas de UNA actividad "efectivas": si el usuario editó a mano las fechas de ESA
+        // actividad en particular (marca explícita en ESTADO.fechaActividadManual), se respetan.
+        // Si no, SIEMPRE se recalculan frescas a partir del período actual de la bitácora — sin
+        // importar qué haya quedado guardado antes (por ejemplo, por un valor intermedio raro
+        // mientras se escribía la fecha de inicio de la etapa a mano).
+        function fechasActividadEfectivas(fechaInicioEtapa, numero, indice, actividadGuardada) {
+            var esManual = ESTADO.fechaActividadManual && ESTADO.fechaActividadManual[numero] && ESTADO.fechaActividadManual[numero][indice];
+            if (esManual) {
+                return {
+                    fecha_inicio: (actividadGuardada && actividadGuardada.fecha_inicio) || '',
+                    fecha_fin: (actividadGuardada && actividadGuardada.fecha_fin) || ''
+                };
+            }
+            var periodo = periodoEfectivo(fechaInicioEtapa, numero);
+            return {
+                fecha_inicio: periodo ? periodo.desde : '',
+                fecha_fin: periodo ? periodo.hasta : ''
+            };
         }
 
         function escapeHtml(texto) {

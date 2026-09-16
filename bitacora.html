@@ -872,11 +872,20 @@
             if (nota) nota.classList.add('d-none');
         });
 
-        document.getElementById('fechaInicioEtapa').addEventListener('change', function () {
+        // Al escribir la fecha de inicio a mano, el navegador puede disparar "change" con un
+        // valor intermedio mientras se completa cada parte (día/mes/año) — no solo al terminar.
+        // Se espera un momento sin más cambios antes de recalcular todo, para no procesar un
+        // valor a medio escribir. Con el calendario esto no afecta nada: es un solo cambio limpio.
+        var esperaFechaInicioEtapa = null;
+        function procesarCambioFechaInicioEtapa() {
             calcularPeriodo();
             guardarEstado();
             precalcularFechasDeTodasLasBitacoras();
             renderizarActividadesPorBitacora(numeroActual);
+        }
+        document.getElementById('fechaInicioEtapa').addEventListener('change', function () {
+            clearTimeout(esperaFechaInicioEtapa);
+            esperaFechaInicioEtapa = setTimeout(procesarCambioFechaInicioEtapa, 900);
         });
 
         // ============================================================
@@ -920,8 +929,11 @@
                 if (!ESTADO.porBitacora[n]) ESTADO.porBitacora[n] = [];
                 for (var i = 0; i < totalCompetencias; i++) {
                     if (!ESTADO.porBitacora[n][i]) ESTADO.porBitacora[n][i] = {};
-                    if (!ESTADO.porBitacora[n][i].fecha_inicio) ESTADO.porBitacora[n][i].fecha_inicio = periodo.desde;
-                    if (!ESTADO.porBitacora[n][i].fecha_fin) ESTADO.porBitacora[n][i].fecha_fin = periodo.hasta;
+                    var esEstaFechaManual = ESTADO.fechaActividadManual && ESTADO.fechaActividadManual[n] && ESTADO.fechaActividadManual[n][i];
+                    if (!esEstaFechaManual) {
+                        ESTADO.porBitacora[n][i].fecha_inicio = periodo.desde;
+                        ESTADO.porBitacora[n][i].fecha_fin = periodo.hasta;
+                    }
                 }
             }
             persistirEstado();
@@ -1374,8 +1386,16 @@
                     evidenciaTextoInicial = 'ORDEN DE TRABAJO';
                 }
 
-                var fechaInicioResuelta = datos.fecha_inicio || periodoDesde;
-                var fechaFinResuelta = datos.fecha_fin || periodoHasta;
+                var fechasResueltas = fechasActividadEfectivas(ESTADO.campos.fecha_inicio_etapa, numero, i, datos);
+                var fechaInicioResuelta = fechasResueltas.fecha_inicio || periodoDesde;
+                var fechaFinResuelta = fechasResueltas.fecha_fin || periodoHasta;
+                var esFechaActividadManual = ESTADO.fechaActividadManual && ESTADO.fechaActividadManual[numero] && ESTADO.fechaActividadManual[numero][i];
+                if (!esFechaActividadManual) {
+                    if (!ESTADO.porBitacora[numero]) ESTADO.porBitacora[numero] = [];
+                    if (!ESTADO.porBitacora[numero][i]) ESTADO.porBitacora[numero][i] = {};
+                    ESTADO.porBitacora[numero][i].fecha_inicio = fechaInicioResuelta;
+                    ESTADO.porBitacora[numero][i].fecha_fin = fechaFinResuelta;
+                }
 
                 // Si esta actividad cae dentro de una incapacidad o pausa de contrato registrada,
                 // se usa eso como valor por defecto de "Observaciones" (editable) — en vez de
@@ -1468,6 +1488,22 @@
                     var bloque = textarea.closest('.actividad-bloque');
                     var nota = bloque.querySelector('.nota-descripcion-heredada');
                     if (nota) nota.classList.add('d-none');
+                });
+            });
+
+            // Apenas la persona edita a mano la fecha de inicio o fin de ESTA actividad, se marca
+            // como "editada a mano" — de ahí en adelante se respeta tal cual, sin que el cálculo
+            // automático (que sigue funcionando para las demás) la vuelva a pisar.
+            contenedor.querySelectorAll('.actividad-bloque').forEach(function (bloque) {
+                var idx = parseInt(bloque.getAttribute('data-index'), 10);
+                ['act-fecha-inicio', 'act-fecha-fin'].forEach(function (clase) {
+                    var input = bloque.querySelector('.' + clase);
+                    if (!input) return;
+                    input.addEventListener('input', function () {
+                        if (!ESTADO.fechaActividadManual) ESTADO.fechaActividadManual = {};
+                        if (!ESTADO.fechaActividadManual[numero]) ESTADO.fechaActividadManual[numero] = {};
+                        ESTADO.fechaActividadManual[numero][idx] = true;
+                    });
                 });
             });
 
@@ -1667,15 +1703,6 @@
             return fechaEntregaEfectiva(ESTADO.campos.fecha_inicio_etapa, numero);
         }
 
-        // Fechas de una actividad "efectivas": si el usuario nunca visitó esa bitácora, se
-        // completan solas con el período de esa bitácora (igual que ya pasa al abrirla en pantalla).
-        function obtenerFechasActividadEfectivas(act, periodo) {
-            return {
-                fecha_inicio: (act && act.fecha_inicio) || (periodo ? periodo.desde : ''),
-                fecha_fin: (act && act.fecha_fin) || (periodo ? periodo.hasta : '')
-            };
-        }
-
         // Valida las actividades (descripción/fechas/evidencia) de UNA bitácora específica.
         // Si se pasa periodo, valida que las fechas caigan dentro de ese período.
         // ⚠️ AVISO TEMPORAL (caso especial en curso): dentro de esta función, la validación que
@@ -1690,7 +1717,7 @@
                 var numAct = idx + 1;
                 var prefijo = 'Bitácora ' + numeroBitacora + ', competencia ' + numAct + ': ';
                 var desc = (obtenerDescripcionEfectiva(numeroBitacora, idx) || '').trim();
-                var fechasEfectivas = obtenerFechasActividadEfectivas(act, periodo);
+                var fechasEfectivas = fechasActividadEfectivas(ESTADO.campos.fecha_inicio_etapa, numeroBitacora, idx, act);
                 var fi = fechasEfectivas.fecha_inicio;
                 var ff = fechasEfectivas.fecha_fin;
                 var evidenciaEfectiva = obtenerEvidenciaEfectiva(numeroBitacora, idx);
@@ -1843,7 +1870,7 @@
                     if (!ESTADO.competencias[i] || !ESTADO.competencias[i].trim()) continue; // sin competencia -> no se incluye en el documento
                     var act = lista[i] || {};
                     var evidenciaEfectiva = obtenerEvidenciaEfectiva(n, i);
-                    var fechasEfectivas = obtenerFechasActividadEfectivas(act, periodo);
+                    var fechasEfectivas = fechasActividadEfectivas(fechaInicioEtapa, n, i, act);
                     var observacionesEfectivas = act.observaciones;
                     if (!observacionesEfectivas && i === 0) {
                         observacionesEfectivas = tipoIncapacidadParaRango(fechasEfectivas.fecha_inicio, fechasEfectivas.fecha_fin, ESTADO.incapacidades);

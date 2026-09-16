@@ -224,8 +224,9 @@
                     evidenciaImagen = listaBitacora1[i].evidencia_imagen || null;
                 }
                 var descripcion = act.descripcion || (listaBitacora1[i] ? (listaBitacora1[i].descripcion || '') : '');
-                var fechaInicioAct = act.fecha_inicio || (periodo ? periodo.desde : '');
-                var fechaFinAct = act.fecha_fin || (periodo ? periodo.hasta : '');
+                var fechasAct = fechasActividadEfectivas(fechaInicioEtapa, numero, i, act);
+                var fechaInicioAct = fechasAct.fecha_inicio || (periodo ? periodo.desde : '');
+                var fechaFinAct = fechasAct.fecha_fin || (periodo ? periodo.hasta : '');
                 var observacionesAct = act.observaciones;
                 if (!observacionesAct && i === 0) {
                     observacionesAct = tipoIncapacidadParaRango(fechaInicioAct, fechaFinAct, ESTADO.incapacidades);
