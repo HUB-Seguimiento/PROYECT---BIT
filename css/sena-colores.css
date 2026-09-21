@@ -212,3 +212,89 @@
         margin-left: 6.5rem;
     }
 }
+
+/* ============================================================
+   Tabla de "Descripción de actividades, evidencias y observaciones"
+   ============================================================
+   Antes cada actividad era una tarjeta apilada; ahora se muestra como
+   una tabla (más parecida al formato oficial), con la competencia
+   asociada como referencia de solo lectura en la primera columna.
+   ============================================================ */
+.tabla-actividades-bitacora {
+    font-size: 0.85rem;
+}
+.tabla-actividades-bitacora thead th {
+    background: var(--sena-verde-secundario);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: center;
+    vertical-align: middle;
+    border-color: var(--sena-verde-secundario);
+}
+.tabla-actividades-bitacora thead th .text-danger {
+    color: #ffdada !important;
+}
+.tabla-actividades-bitacora td {
+    vertical-align: top;
+    padding: 10px 8px;
+}
+.tabla-actividades-bitacora .celda-competencia-asociada {
+    background: #eef7e6;
+    font-size: 0.82rem;
+    color: #2d5a0e;
+}
+.tabla-actividades-bitacora textarea.form-control,
+.tabla-actividades-bitacora input.form-control {
+    font-size: 0.85rem;
+}
+.tabla-actividades-bitacora tbody tr:nth-child(even) td:not(.celda-competencia-asociada) {
+    background: #fbfbfd;
+}
+
+/* ============================================================
+   Competencias en un solo recuadro elegante — una al lado de la
+   otra (no apiladas), para que se sienta como un solo bloque y no
+   como varias cajas repetidas.
+   ============================================================ */
+.caja-competencias {
+    border: 1px solid #d1d3e2;
+    border-radius: 0.9rem;
+    padding: 1.1rem 1.2rem;
+    background: #fff;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.1rem;
+}
+.caja-competencias .competencia-bloque {
+    flex: 1 1 230px;
+    min-width: 230px;
+}
+
+/* ============================================================
+   Bordes redondeados en la tabla de "Descripción de actividades"
+   ============================================================
+   Una tabla con border-collapse no respeta border-radius por sí
+   sola, así que se redondea el contenedor que la envuelve y se
+   recorta lo que sobre con overflow:hidden.
+   ============================================================ */
+.caja-tabla-actividades {
+    border: 1px solid #d1d3e2;
+    border-radius: 0.85rem;
+    overflow: hidden;
+}
+.caja-tabla-actividades .tabla-actividades-bitacora {
+    border: none;
+    margin-bottom: 0 !important;
+}
+.caja-tabla-actividades .tabla-actividades-bitacora td:first-child,
+.caja-tabla-actividades .tabla-actividades-bitacora th:first-child {
+    border-left: none;
+}
+.caja-tabla-actividades .tabla-actividades-bitacora td:last-child,
+.caja-tabla-actividades .tabla-actividades-bitacora th:last-child {
+    border-right: none;
+}
+.caja-tabla-actividades .tabla-actividades-bitacora tr:last-child td {
+    border-bottom: none;
+}

@@ -418,7 +418,7 @@
                                     <strong>al menos 2</strong> puedes continuar (pueden repetirse si corresponde). Estas vienen del programa de formación y
                                     <strong>no cambian</strong> con el tiempo, así que se llenan <strong>una sola vez</strong> para las 12 bitácoras.
                                 </p>
-                                <div id="contenedorCompetencias"></div>
+                                <div id="contenedorCompetencias" class="caja-competencias"></div>
                             </div>
                         </div>
 
@@ -878,6 +878,17 @@
         // valor a medio escribir. Con el calendario esto no afecta nada: es un solo cambio limpio.
         var esperaFechaInicioEtapa = null;
         function procesarCambioFechaInicioEtapa() {
+            // Si el selector de "Bitácora N°" todavía está vacío (primera vez que se pone la
+            // fecha de inicio), se selecciona la 1 automáticamente para no dejar al usuario
+            // preguntándose qué hacer después. Si ya había una bitácora seleccionada, se respeta
+            // — cambiar la fecha de inicio después no debe sacarlo de donde esté trabajando.
+            var selectorBitacora = document.getElementById('bitacoraNumero');
+            if (!selectorBitacora.value) {
+                selectorBitacora.value = '1';
+                numeroActual = '1';
+                var selectorAbajo = document.getElementById('bitacoraNumeroAbajo');
+                if (selectorAbajo) selectorAbajo.value = '1';
+            }
             calcularPeriodo();
             guardarEstado();
             precalcularFechasDeTodasLasBitacoras();
@@ -1203,12 +1214,12 @@
 
         function construirBloqueCompetenciaHTML(indice, valor) {
             return '' +
-                '<div class="competencia-bloque border rounded p-2 mb-2 d-flex align-items-start" data-index="' + indice + '">' +
-                '  <div class="flex-grow-1 mr-2">' +
-                '    <label class="mb-1">Competencia ' + (indice + 1) + '</label>' +
-                '    <textarea class="form-control competencia-texto" rows="2">' + escapeHtml(valor) + '</textarea>' +
+                '<div class="competencia-bloque" data-index="' + indice + '">' +
+                '  <div class="d-flex justify-content-between align-items-center mb-1">' +
+                '    <label class="mb-0">Competencia ' + (indice + 1) + '</label>' +
+                '    <button type="button" class="btn btn-sm text-danger p-0 btnRemoveCompetencia no-print" title="Quitar"><i class="fas fa-trash"></i></button>' +
                 '  </div>' +
-                '  <button type="button" class="btn btn-sm btn-danger btnRemoveCompetencia no-print mt-4"><i class="fas fa-trash"></i></button>' +
+                '  <textarea class="form-control competencia-texto" rows="3">' + escapeHtml(valor) + '</textarea>' +
                 '</div>';
         }
 
@@ -1270,61 +1281,56 @@
             var usaSugerenciaTexto = !tieneTexto && !!sugerenciaBitacora1.evidencia_texto;
             var usaSugerenciaImagen = !tieneImagen && !!sugerenciaBitacora1.evidencia_imagen;
             var descripcionVieneDeBitacora1 = !!sugerenciaBitacora1.descripcion && datos.descripcion === sugerenciaBitacora1.descripcion;
-            var descripcionCorta = (competenciaTexto || '(sin competencia todavía)').substring(0, 140);
+            var descripcionCorta = (competenciaTexto || '(sin competencia todavía)');
             return '' +
-                '<div class="actividad-bloque border rounded p-3 mb-3" data-index="' + indice + '">' +
-                '  <div class="mb-2">' +
-                '    <div class="font-weight-bold text-gray-700">Actividad ' + (indice + 1) + '</div>' +
-                '    <div class="small text-muted"><i class="fas fa-info-circle"></i> Competencia asociada (referencia, no se edita aquí): <span class="competencia-ref-texto">' + escapeHtml(descripcionCorta) + '</span></div>' +
-                '  </div>' +
-                '  <div class="row">' +
-                '    <div class="form-group col-md-12">' +
-                '      <label class="bitacora-required">Descripción de la actividad realizada</label>' +
-                '      <textarea class="form-control act-descripcion" rows="2" required>' + escapeHtml(datos.descripcion) + '</textarea>' +
-                '      <small class="text-muted d-block mt-1 nota-descripcion-heredada' + (descripcionVieneDeBitacora1 ? '' : ' d-none') + '"><i class="fas fa-magic"></i> Copiada de la Bitácora 1 — puedes editarla libremente; si la dejas así, esta es la que sale en el PDF.</small>' +
+                '<tr class="actividad-bloque" data-index="' + indice + '">' +
+
+                '  <td class="celda-competencia-asociada">' +
+                '    <div class="small font-weight-bold text-gray-700 mb-1">Actividad ' + (indice + 1) + '</div>' +
+                '    <span class="competencia-ref-texto">' + escapeHtml(descripcionCorta) + '</span>' +
+                '  </td>' +
+
+                '  <td>' +
+                '    <textarea class="form-control act-descripcion" rows="3" required placeholder="Descripción de la actividad realizada">' + escapeHtml(datos.descripcion) + '</textarea>' +
+                '    <small class="text-muted d-block mt-1 nota-descripcion-heredada' + (descripcionVieneDeBitacora1 ? '' : ' d-none') + '"><i class="fas fa-magic"></i> Copiada de la Bitácora 1 — editable; si la dejas así, sale en el PDF.</small>' +
+                '  </td>' +
+
+                '  <td>' +
+                '    <input type="date" class="form-control act-fecha-inicio" value="' + (datos.fecha_inicio || '') + '" required>' +
+                '  </td>' +
+
+                '  <td>' +
+                '    <input type="date" class="form-control act-fecha-fin" value="' + (datos.fecha_fin || '') + '" required>' +
+                '  </td>' +
+
+                '  <td>' +
+                '    <div class="mb-1"><small class="text-muted font-weight-bold">Texto:</small></div>' +
+                '    <textarea class="form-control act-evidencia-texto" rows="2"' + (tieneImagen ? ' disabled' : '') + ' placeholder="' + escapeHtml(usaSugerenciaTexto ? sugerenciaBitacora1.evidencia_texto : 'Obligatorio si no subes una imagen') + '">' + escapeHtml(datos.evidencia_texto) + '</textarea>' +
+                '    <small class="text-muted d-block mt-1 nota-bloqueo-texto' + (tieneImagen ? '' : ' d-none') + '"><i class="fas fa-lock"></i> Ya hay una imagen cargada.</small>' +
+                (usaSugerenciaTexto ? '    <small class="text-muted d-block mt-1"><i class="fas fa-magic"></i> Si lo dejas vacío, se usa la de la Bitácora 1.</small>' : '') +
+                '    <div class="mt-2 mb-1"><small class="text-muted font-weight-bold">O imagen:</small></div>' +
+                '    <div class="custom-file">' +
+                '      <input type="file" class="custom-file-input act-evidencia-imagen-input" accept="image/*"' + (tieneTexto ? ' disabled' : '') + '>' +
+                '      <label class="custom-file-label">' + (tieneImagen ? 'Imagen cargada' : 'Seleccionar...') + '</label>' +
                 '    </div>' +
-                '  </div>' +
-                '  <div class="row">' +
-                '    <div class="form-group col-md-3">' +
-                '      <label class="bitacora-required">Fecha de inicio</label>' +
-                '      <input type="date" class="form-control act-fecha-inicio" value="' + (datos.fecha_inicio || '') + '" required>' +
+                '    <small class="text-muted d-block mt-1 nota-bloqueo-imagen' + (tieneTexto ? '' : ' d-none') + '"><i class="fas fa-lock"></i> Ya escribiste texto.</small>' +
+                '    <div class="mt-2 act-evidencia-imagen-wrapper" style="display:' + (tieneImagen ? 'block' : 'none') + ';">' +
+                '      <img class="img-thumbnail act-evidencia-imagen-preview" style="max-height:70px;" src="' + (datos.evidencia_imagen || '') + '">' +
+                '      <button type="button" class="btn btn-sm btn-outline-danger ml-1 no-print btn-quitar-act-imagen"><i class="fas fa-times"></i></button>' +
                 '    </div>' +
-                '    <div class="form-group col-md-3">' +
-                '      <label class="bitacora-required">Fecha de fin</label>' +
-                '      <input type="date" class="form-control act-fecha-fin" value="' + (datos.fecha_fin || '') + '" required>' +
-                '    </div>' +
-                '    <div class="form-group col-md-6">' +
-                '      <label>Observaciones / inasistencias / dificultades (opcional)</label>' +
-                '      <textarea class="form-control act-observaciones" rows="2">' + escapeHtml(datos.observaciones) + '</textarea>' +
-                '    </div>' +
-                '  </div>' +
-                '  <div class="row">' +
-                '    <div class="form-group col-md-6">' +
-                '      <label class="bitacora-required">Evidencia de cumplimiento (texto)</label>' +
-                '      <textarea class="form-control act-evidencia-texto" rows="2"' + (tieneImagen ? ' disabled' : '') + ' placeholder="' + escapeHtml(usaSugerenciaTexto ? sugerenciaBitacora1.evidencia_texto : 'Obligatorio si no subes una imagen') + '">' + escapeHtml(datos.evidencia_texto) + '</textarea>' +
-                '      <small class="text-muted d-block mt-1 nota-bloqueo-texto' + (tieneImagen ? '' : ' d-none') + '"><i class="fas fa-lock"></i> Ya hay una imagen cargada. Quítala si prefieres escribir la evidencia en texto.</small>' +
-                (usaSugerenciaTexto ? '      <small class="text-muted d-block mt-1"><i class="fas fa-magic"></i> Si no escribes nada aquí, se usará la evidencia de la Bitácora 1 al descargar.</small>' : '') +
-                '    </div>' +
-                '    <div class="form-group col-md-6">' +
-                '      <label>Evidencia de cumplimiento (imagen)</label>' +
-                '      <div class="custom-file">' +
-                '        <input type="file" class="custom-file-input act-evidencia-imagen-input" accept="image/*"' + (tieneTexto ? ' disabled' : '') + '>' +
-                '        <label class="custom-file-label">' + (tieneImagen ? 'Imagen cargada previamente' : 'Seleccionar imagen...') + '</label>' +
-                '      </div>' +
-                '      <small class="text-muted d-block mt-1 nota-bloqueo-imagen' + (tieneTexto ? '' : ' d-none') + '"><i class="fas fa-lock"></i> Ya escribiste la evidencia en texto. Bórrala si prefieres subir una imagen en su lugar.</small>' +
-                '      <div class="mt-2 act-evidencia-imagen-wrapper" style="display:' + (tieneImagen ? 'block' : 'none') + ';">' +
-                '        <img class="img-thumbnail act-evidencia-imagen-preview" style="max-height:90px;" src="' + (datos.evidencia_imagen || '') + '">' +
-                '        <button type="button" class="btn btn-sm btn-outline-danger ml-2 no-print btn-quitar-act-imagen"><i class="fas fa-times"></i> Quitar</button>' +
-                '      </div>' +
                 (usaSugerenciaImagen ? (
-                    '      <div class="mt-2 act-evidencia-sugerida-wrapper">' +
-                    '        <img class="img-thumbnail" style="max-height:90px;opacity:0.4;" src="' + sugerenciaBitacora1.evidencia_imagen + '">' +
-                    '        <small class="text-muted d-block"><i class="fas fa-magic"></i> Sugerencia de Bitácora 1 — se usará esta si no subes otra imagen aquí.</small>' +
-                    '      </div>'
+                    '    <div class="mt-2 act-evidencia-sugerida-wrapper">' +
+                    '      <img class="img-thumbnail" style="max-height:70px;opacity:0.4;" src="' + sugerenciaBitacora1.evidencia_imagen + '">' +
+                    '      <small class="text-muted d-block"><i class="fas fa-magic"></i> Sugerencia de Bitácora 1.</small>' +
+                    '    </div>'
                 ) : '') +
-                '    </div>' +
-                '  </div>' +
-                '</div>';
+                '  </td>' +
+
+                '  <td>' +
+                '    <textarea class="form-control act-observaciones" rows="3" placeholder="Opcional">' + escapeHtml(datos.observaciones) + '</textarea>' +
+                '  </td>' +
+
+                '</tr>';
         }
 
         function renderizarActividadesPorBitacora(numero) {
@@ -1417,10 +1423,30 @@
                 };
                 html += construirBloqueActividadBitacoraHTML(i, competenciasTexto[i], datosConDefaults, sugerencia);
             }
+
+            var htmlFinal = '';
             if (huboVacias) {
-                html = '<div class="alert alert-light border small mb-3"><i class="fas fa-info-circle"></i> Solo se piden actividades para las competencias que sí diligenciaste — deja una competencia vacía si no aplica.</div>' + html;
+                htmlFinal += '<div class="alert alert-light border small mb-3"><i class="fas fa-info-circle"></i> Solo se piden actividades para las competencias que sí diligenciaste — deja una competencia vacía si no aplica.</div>';
             }
-            contenedor.innerHTML = html;
+            if (html) {
+                htmlFinal += '' +
+                    '<div class="table-responsive caja-tabla-actividades">' +
+                    '<table class="table table-bordered tabla-actividades-bitacora mb-0">' +
+                    '  <thead>' +
+                    '    <tr>' +
+                    '      <th style="width:13%">Competencia asociada</th>' +
+                    '      <th style="width:22%">Descripción de la actividad <span class="text-danger">*</span></th>' +
+                    '      <th style="width:9%">Fecha inicio <span class="text-danger">*</span></th>' +
+                    '      <th style="width:9%">Fecha fin <span class="text-danger">*</span></th>' +
+                    '      <th style="width:24%">Evidencia de cumplimiento <span class="text-danger">*</span></th>' +
+                    '      <th style="width:23%">Observaciones</th>' +
+                    '    </tr>' +
+                    '  </thead>' +
+                    '  <tbody>' + html + '</tbody>' +
+                    '</table>' +
+                    '</div>';
+            }
+            contenedor.innerHTML = htmlFinal;
 
             contenedor.querySelectorAll('.act-evidencia-imagen-input').forEach(function (input) {
                 input.addEventListener('change', function () {

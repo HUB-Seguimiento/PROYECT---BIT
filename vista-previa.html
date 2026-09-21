@@ -23,6 +23,10 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
+    <!-- Para poder descargar el PDF directamente desde esta página (mismas librerías que usa "Bitacora") -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
     <style>
         /* La previsualización se muestra como una "hoja" no editable */
         #hojaVistaPrevia {
@@ -120,9 +124,14 @@
 
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Vista Previa</h1>
-                        <a href="bitacora.html" class="btn btn-sm btn-outline-primary no-print">
-                            <i class="fas fa-pen"></i> Ir a diligenciar la bitácora
-                        </a>
+                        <div class="no-print">
+                            <a href="bitacora.html" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-pen"></i> Ir a diligenciar la bitácora
+                            </a>
+                            <button type="button" id="btnDescargarPdfPreview" class="btn btn-sm btn-primary">
+                                <i class="fas fa-file-pdf"></i> Descargar PDF
+                            </button>
+                        </div>
                     </div>
 
                     <div class="card shadow mb-4 no-print">
@@ -181,6 +190,22 @@
     <a class="scroll-to-top rounded no-print" href="#page-top">
         <i class="fas fa-angle-up"></i>
     </a>
+
+    <!-- Modal de aviso (igual al de "Bitacora", para no usar alert() nativo) -->
+    <div class="modal fade no-print" id="avisoModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="avisoModalTitulo">Bitácora Etapa Productiva</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body" id="avisoModalCuerpo" style="white-space:pre-line;"></div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" data-dismiss="modal">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Bootstrap core JavaScript-->
     <script src="vendor/jquery/jquery.min.js"></script>
@@ -256,9 +281,105 @@
             };
 
             hoja.innerHTML = construirHtmlBitacora(datos, bit, 'img/logo_SENA.png');
+
+            // Se guardan para que el botón "Descargar PDF" pueda generar exactamente
+            // lo que se está viendo en pantalla en este momento.
+            window.ultimoDatosPreview = datos;
+            window.ultimoBitPreview = bit;
         }
 
         document.getElementById('selectorBitacoraPreview').addEventListener('change', cargarYRenderizarVistaPrevia);
+
+        // Reemplaza alert() nativo (igual que en "Bitacora"): los diálogos nativos del
+        // navegador muestran siempre el origen de la página por seguridad, y eso no se puede
+        // personalizar. Con un modal propio se controla el título y el estilo.
+        function mostrarAviso(mensaje, titulo) {
+            document.getElementById('avisoModalTitulo').textContent = titulo || 'Bitácora Etapa Productiva';
+            document.getElementById('avisoModalCuerpo').textContent = mensaje;
+            $('#avisoModal').modal('show');
+        }
+
+        // ============================================================
+        //  Descargar PDF directamente desde la Vista Previa — genera
+        //  exactamente la bitácora que se está viendo en este momento,
+        //  con la misma técnica (html2canvas + jsPDF) que usa "Bitacora".
+        // ============================================================
+        function generarPDF(datos) {
+            function continuarConLogo(dataUrlLogo) {
+                var contenedor = document.createElement('div');
+                contenedor.style.position = 'fixed';
+                contenedor.style.left = '-99999px';
+                contenedor.style.top = '0';
+                contenedor.style.background = '#fff';
+                document.body.appendChild(contenedor);
+
+                var ANCHO_PAGINA_PT = 612;
+                var doc = null;
+
+                var indice = 0;
+                function procesarSiguiente() {
+                    if (indice >= datos.bitacoras.length) {
+                        document.body.removeChild(contenedor);
+                        doc.save(construirNombreArchivo(datos) + '.pdf');
+                        return;
+                    }
+                    var bit = datos.bitacoras[indice];
+                    contenedor.innerHTML = construirHtmlBitacora(datos, bit, dataUrlLogo);
+
+                    html2canvas(contenedor, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(function (canvas) {
+                        var imgData = canvas.toDataURL('image/jpeg', 0.92);
+                        var alturaPagina = ANCHO_PAGINA_PT * (canvas.height / canvas.width);
+
+                        if (!doc) {
+                            doc = new jspdf.jsPDF({ unit: 'pt', format: [ANCHO_PAGINA_PT, alturaPagina] });
+                        } else {
+                            doc.addPage([ANCHO_PAGINA_PT, alturaPagina]);
+                        }
+                        doc.addImage(imgData, 'JPEG', 0, 0, ANCHO_PAGINA_PT, alturaPagina);
+
+                        indice++;
+                        procesarSiguiente();
+                    }).catch(function (err) {
+                        document.body.removeChild(contenedor);
+                        console.error('Error generando el PDF:', err);
+                        mostrarAviso('No se pudo generar el PDF: ' + err.message, 'Error al generar el PDF');
+                    });
+                }
+                procesarSiguiente();
+            }
+
+            fetch('img/logo_SENA.png').then(function (r) {
+                if (!r.ok) throw new Error('no encontrado');
+                return r.blob();
+            }).then(function (blob) {
+                var reader = new FileReader();
+                reader.onload = function () { continuarConLogo(reader.result); };
+                reader.onerror = function () { continuarConLogo(null); };
+                reader.readAsDataURL(blob);
+            }).catch(function () { continuarConLogo(null); });
+        }
+
+        document.getElementById('btnDescargarPdfPreview').addEventListener('click', function () {
+            if (!window.ultimoDatosPreview || !window.ultimoBitPreview) {
+                mostrarAviso('Todavía no hay nada que descargar — ve a "Bitacora" y diligencia la información primero.', 'Nada para descargar');
+                return;
+            }
+            var btn = this;
+            var textoOriginal = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+            var datosParaDescarga = {
+                campos: window.ultimoDatosPreview.campos,
+                alternativa: window.ultimoDatosPreview.alternativa,
+                firmas: window.ultimoDatosPreview.firmas,
+                bitacoras: [window.ultimoBitPreview]
+            };
+            setTimeout(function () {
+                generarPDF(datosParaDescarga);
+                btn.disabled = false;
+                btn.innerHTML = textoOriginal;
+            }, 50);
+        });
 
         cargarYRenderizarVistaPrevia();
     </script>
