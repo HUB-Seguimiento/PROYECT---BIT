@@ -253,22 +253,14 @@
 }
 
 /* ============================================================
-   Competencias en un solo recuadro elegante — una al lado de la
-   otra (no apiladas), para que se sienta como un solo bloque y no
-   como varias cajas repetidas.
+   Columna "Competencia asociada" dentro de la tabla de actividades:
+   ahora es un campo editable (antes era solo texto de referencia).
    ============================================================ */
-.caja-competencias {
-    border: 1px solid #d1d3e2;
-    border-radius: 0.9rem;
-    padding: 1.1rem 1.2rem;
-    background: #fff;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.1rem;
+.celda-competencia-asociada {
+    min-width: 190px;
 }
-.caja-competencias .competencia-bloque {
-    flex: 1 1 230px;
-    min-width: 230px;
+.celda-competencia-asociada .act-competencia {
+    background: #fff;
 }
 
 /* ============================================================

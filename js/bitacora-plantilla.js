@@ -202,6 +202,16 @@
         // quedado guardado antes en ESTADO.fechasEntrega por cálculos automáticos previos. Así
         // se evita el problema de sincronización cuando cambia el período (edición manual,
         // arrastre por incapacidad, o registro de una incapacidad/pausa de contrato).
+        // Competencia "efectiva" de una actividad: la Bitácora 1 es la fuente (ESTADO.competencias);
+        // las demás bitácoras heredan ese texto, salvo que el usuario lo haya editado directamente
+        // en SU tabla — en ese caso se respeta esa edición puntual, sin afectar a las demás.
+        function competenciaEfectiva(numero, indice) {
+            if (String(numero) === '1') return (ESTADO.competencias && ESTADO.competencias[indice]) || '';
+            var propia = (ESTADO.porBitacora[numero] || [])[indice] || {};
+            if (propia.competencia) return propia.competencia;
+            return (ESTADO.competencias && ESTADO.competencias[indice]) || '';
+        }
+
         function fechaEntregaEfectiva(fechaInicioEtapa, numero) {
             var esManual = ESTADO.fechaEntregaManual && ESTADO.fechaEntregaManual[numero];
             if (esManual) return (ESTADO.fechasEntrega && ESTADO.fechasEntrega[numero]) || '';
